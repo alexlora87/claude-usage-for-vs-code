@@ -49,4 +49,4 @@ Press `F5` in VS Code to launch an Extension Development Host.
 
 ## License
 
-[MIT](LICENSE). The Spanish project plan is in [docs/plan.es.md](docs/plan.es.md).
+[MIT](LICENSE)

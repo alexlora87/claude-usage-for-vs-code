@@ -70,15 +70,16 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
+/** Markdown for the hover: a table, so the columns line up in the regular UI font. */
 export function formatTooltip(usage: Usage, now: number): string | undefined {
-  const lines: string[] = [];
+  const rows: string[] = [];
   if (usage.session?.resetsAt) {
-    lines.push(`Session (5hr)    resets ${formatResetTime(usage.session.resetsAt, now)}`);
+    rows.push(`| Session (5hr) | resets ${formatResetTime(usage.session.resetsAt, now)} |`);
   }
   if (usage.weekly?.resetsAt) {
-    lines.push(`Weekly (7 day)   resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
+    rows.push(`| Weekly (7 day) | resets ${formatResetTime(usage.weekly.resetsAt, now)} |`);
   }
-  return lines.length ? lines.join('\n') : undefined;
+  return rows.length ? ['| | |', '|:--|:--|', ...rows].join('\n') : undefined;
 }
 
 const ERROR_TEXT: Record<UsageErrorKind, string> = {
@@ -140,7 +141,7 @@ function errorTooltip(state: ViewState, now: number): string | undefined {
   let text = state.error.message;
   if (state.retryAt) {
     const seconds = Math.max(1, Math.ceil((state.retryAt - now) / 1000));
-    text += `\nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
+    text += `  \nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
   }
   return text;
 }
