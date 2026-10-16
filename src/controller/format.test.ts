@@ -122,7 +122,7 @@ describe('buildView', () => {
   it('shows the error reason and retry time without data', () => {
     const view = buildView({ ...base, error: { kind: 'no-credentials', message: 'Credentials not found' }, retryAt: now + 30_000 }, false, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage: Sign in to Claude Code');
-    expect(view.tooltip).toBe('Credentials not found\n\nRetrying in 30s');
+    expect(view.tooltip).toBe('Credentials not found  \nRetrying in 30s');
   });
 
   it('uses the warning level of the worst window', () => {

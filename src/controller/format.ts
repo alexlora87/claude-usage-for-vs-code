@@ -143,7 +143,7 @@ function errorTooltip(state: ViewState, now: number): string | undefined {
   let text = state.error.message;
   if (state.retryAt) {
     const seconds = Math.max(1, Math.ceil((state.retryAt - now) / 1000));
-    text += `\n\nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
+    text += `  \nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
   }
   return text;
 }
