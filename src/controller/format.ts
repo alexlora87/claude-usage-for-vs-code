@@ -1,4 +1,5 @@
-import { Usage, UsageWindow } from '../shared/types';
+import type { ViewState } from '../engine/scheduler';
+import { Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
 
@@ -72,4 +73,67 @@ export function formatTooltip(usage: Usage, now: number): string | undefined {
     lines.push(`Weekly (7 day)   resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
   }
   return lines.length ? lines.join('\n') : undefined;
+}
+
+const ERROR_TEXT: Record<UsageErrorKind, string> = {
+  'no-credentials': 'Sign in to Claude Code',
+  unauthorized: 'Sign in again',
+  'rate-limited': 'Rate limited',
+  offline: 'Offline',
+  unknown: 'Error',
+};
+
+export interface StatusView {
+  text: string;
+  tooltip?: string;
+  level: Level;
+}
+
+export const PREFIX = '$(sparkle) Claude Usage';
+
+/** Builds everything the status bar shows from the current state. */
+export function buildView(state: ViewState, extended: boolean, icon: (percent: number) => string, now: number): StatusView {
+  if (!state.usage) {
+    if (state.error) {
+      return { text: `${PREFIX}: ${ERROR_TEXT[state.error.kind]}`, tooltip: errorTooltip(state, now), level: 'ok' };
+    }
+    return { text: `${PREFIX}: loading…`, level: 'ok' };
+  }
+
+  const { session, weekly } = state.usage;
+  const parts: string[] = [];
+  if (session) {
+    parts.push(formatWindow(session, {
+      label: extended ? 'Session (5hr)' : '5h',
+      icon: icon(session.percent),
+      resetsPrefix: extended ? 'Resets in ' : '',
+      longWindow: false,
+    }, now));
+  }
+  if (weekly) {
+    parts.push(formatWindow(weekly, {
+      label: extended ? 'Weekly (7 day)' : '7d',
+      icon: icon(weekly.percent),
+      resetsPrefix: extended ? 'Resets in ' : '',
+      longWindow: true,
+    }, now));
+  }
+
+  const body = parts.length ? parts.join(' | ') : 'no data';
+  const tooltip = [formatTooltip(state.usage, now), state.stale ? errorTooltip(state, now) : undefined]
+    .filter(Boolean)
+    .join('\n\n') || undefined;
+  return { text: `${PREFIX} ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(state.usage) };
+}
+
+function errorTooltip(state: ViewState, now: number): string | undefined {
+  if (!state.error) {
+    return undefined;
+  }
+  let text = state.error.message;
+  if (state.retryAt) {
+    const seconds = Math.max(1, Math.ceil((state.retryAt - now) / 1000));
+    text += `\nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
+  }
+  return text;
 }

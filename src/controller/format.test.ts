@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
+import { buildView, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -77,5 +77,41 @@ describe('reset time', () => {
     const session = { percent: 1, resetsAt: new Date(2026, 9, 16, 18, 45) };
     expect(formatTooltip({ session, weekly: { percent: 2 } }, now)).toBe('Session (5hr)    resets today at 18:45');
     expect(formatTooltip({ session: { percent: 1 } }, now)).toBeUndefined();
+  });
+});
+
+describe('buildView', () => {
+  const now = new Date(2026, 9, 16, 12, 0).getTime();
+  const usage = {
+    session: { percent: 32, resetsAt: new Date(now + 7 * MIN) },
+    weekly: { percent: 4, resetsAt: new Date(now + 6 * DAY + 21 * HOUR) },
+  };
+  const icon = () => '*';
+  const base = { stale: false, loading: false };
+
+  it('renders the default view', () => {
+    expect(buildView({ ...base, usage }, false, icon, now).text).toBe('$(sparkle) Claude Usage 5h * 32% · 0h 7m | 7d * 4% · 6d 21h');
+  });
+
+  it('renders the extended view', () => {
+    expect(buildView({ ...base, usage }, true, icon, now).text).toBe(
+      '$(sparkle) Claude Usage Session (5hr) * 32% · Resets in 0h 7m | Weekly (7 day) * 4% · Resets in 6d 21h',
+    );
+  });
+
+  it('marks stale data with ~ and explains why', () => {
+    const view = buildView({ ...base, usage, stale: true, error: { kind: 'rate-limited', message: 'Rate limited by the API' }, retryAt: now + 90_000 }, false, icon, now);
+    expect(view.text).toContain('Claude Usage ~5h');
+    expect(view.tooltip).toContain('Retrying in 2m');
+  });
+
+  it('shows the error reason and retry time without data', () => {
+    const view = buildView({ ...base, error: { kind: 'no-credentials', message: 'Credentials not found' }, retryAt: now + 30_000 }, false, icon, now);
+    expect(view.text).toBe('$(sparkle) Claude Usage: Sign in to Claude Code');
+    expect(view.tooltip).toBe('Credentials not found\nRetrying in 30s');
+  });
+
+  it('uses the warning level of the worst window', () => {
+    expect(buildView({ ...base, usage: { session: { percent: 95 } } }, false, icon, now).level).toBe('critical');
   });
 });
