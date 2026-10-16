@@ -1,6 +1,8 @@
-const STEPS = ['○', '◔', '◑', '◕', '●'];
+const STEP = 5;
 
-/** Quarter-step circle for a usage percentage. */
+/** Ring glyph from the bundled icon font, rounded to the nearest 5%. */
 export function iconFor(percent: number): string {
-  return STEPS[Math.min(STEPS.length - 1, Math.round(percent / 25))];
+  const clamped = Math.min(100, Math.max(0, percent));
+  const step = String(Math.round(clamped / STEP) * STEP).padStart(2, '0');
+  return `$(claude-usage-ring-${step})`;
 }
