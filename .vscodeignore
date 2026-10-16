@@ -1,0 +1,8 @@
+**
+!out/extension.js
+!resources/*.woff
+!resources/icon.png
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
