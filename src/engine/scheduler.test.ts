@@ -1,25 +1,26 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { Usage, UsageError } from '../shared/types';
 import { backoffMs, deriveState, UsageScheduler } from './scheduler';
-import { CacheData, readCache, writeCache } from './shared_cache';
+import { CacheData, SharedCache } from './shared_cache';
 
 const usage: Usage = { session: { percent: 10, resetsAt: new Date('2026-10-16T23:40:00Z') } };
 const MIN = 60_000;
 
 function setup(fetchUsage: () => Promise<Usage>, start = 1_000_000) {
   const path = join(mkdtempSync(join(tmpdir(), 'cu-test-')), 'cache.json');
+  const cache = new SharedCache(path);
   const clock = { now: start };
   const scheduler = new UsageScheduler({
-    readCache: () => readCache(path),
-    writeCache: (patch) => writeCache(patch, path),
+    readCache: () => cache.read(),
+    writeCache: (patch) => cache.write(patch),
     fetchUsage,
     intervalMs: () => 120_000,
     now: () => clock.now,
   });
-  return { scheduler, clock, path };
+  return { scheduler, clock, cache, path };
 }
 
 describe('backoffMs', () => {
@@ -64,8 +65,8 @@ describe('UsageScheduler', () => {
 
   it('does not fetch while another window has a request in flight', async () => {
     const fetchUsage = vi.fn().mockResolvedValue(usage);
-    const { scheduler, clock, path } = setup(fetchUsage);
-    writeCache({ inFlightUntil: clock.now + 10_000 }, path);
+    const { scheduler, clock, cache } = setup(fetchUsage);
+    cache.write({ inFlightUntil: clock.now + 10_000 });
     await scheduler.tick();
     expect(fetchUsage).not.toHaveBeenCalled();
   });
@@ -98,9 +99,41 @@ describe('UsageScheduler', () => {
   });
 
   it('revives dates read from the cache file', async () => {
-    const { scheduler, clock, path } = setup(vi.fn().mockResolvedValue(usage));
+    const { scheduler, path } = setup(vi.fn().mockResolvedValue(usage));
     await scheduler.tick();
-    expect(readCache(path).usage?.session?.resetsAt).toBeInstanceOf(Date);
-    expect(clock.now).toBeGreaterThan(0);
+    expect(new SharedCache(path).read().usage?.session?.resetsAt).toBeInstanceOf(Date);
+  });
+
+  it('lets a manual refresh skip the cooldown after a sign-in error, but not after a 429', async () => {
+    const fetchUsage = vi.fn()
+      .mockRejectedValueOnce(new UsageError('no-credentials', 'none'))
+      .mockRejectedValueOnce(new UsageError('rate-limited', 'limited'))
+      .mockResolvedValue(usage);
+    const { scheduler, clock } = setup(fetchUsage);
+    await scheduler.tick();
+    clock.now += 1000;
+    await scheduler.tick(true);
+    expect(fetchUsage).toHaveBeenCalledTimes(2);
+    clock.now += 1000;
+    await scheduler.tick(true);
+    expect(fetchUsage).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps throttling in memory when the cache file cannot be written', async () => {
+    const fetchUsage = vi.fn().mockResolvedValue(usage);
+    const dir = mkdtempSync(join(tmpdir(), 'cu-test-'));
+    const blocker = join(dir, 'file');
+    writeFileSync(blocker, '');
+    const cache = new SharedCache(join(blocker, 'cache.json'));
+    const scheduler = new UsageScheduler({
+      readCache: () => cache.read(),
+      writeCache: (patch) => cache.write(patch),
+      fetchUsage,
+      intervalMs: () => 120_000,
+      now: () => 1_000_000,
+    });
+    await scheduler.tick();
+    await scheduler.tick();
+    expect(fetchUsage).toHaveBeenCalledTimes(1);
   });
 });

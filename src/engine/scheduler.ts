@@ -55,7 +55,9 @@ export class UsageScheduler {
     const { deps } = this;
     const now = deps.now();
     const cache = deps.readCache();
-    const blocked = (cache.cooldownUntil ?? 0) > now || (cache.inFlightUntil ?? 0) > now;
+    // A manual refresh may skip the cooldown unless the API asked us to slow down.
+    const coolingDown = (cache.cooldownUntil ?? 0) > now && !(force && cache.error?.kind !== 'rate-limited');
+    const blocked = coolingDown || (cache.inFlightUntil ?? 0) > now;
     if (blocked || (!force && isFresh(cache, deps.intervalMs(), now))) {
       return deriveState(cache, now);
     }

@@ -69,6 +69,11 @@ describe('reset time', () => {
     expect(formatResetTime(new Date(2026, 9, 16, 18, 45), now)).toBe('today at 18:45');
   });
 
+  it('says tomorrow when the reset crosses midnight within 24 hours', () => {
+    const lateNight = new Date(2026, 9, 16, 23, 0).getTime();
+    expect(formatResetTime(new Date(2026, 9, 17, 3, 0), lateNight)).toBe('tomorrow at 03:00');
+  });
+
   it('adds weekday and date beyond 24 hours, in 24-hour format', () => {
     expect(formatResetTime(new Date(2026, 9, 23, 22, 10), now)).toBe('Fri, Oct 23 at 22:10');
   });

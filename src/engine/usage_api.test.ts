@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { UsageError } from '../shared/types';
-import { extractToken } from './credentials';
+import { extractCredentials } from './credentials';
 import { fetchUsage, parseRetryAfter, parseUsage } from './usage_api';
 
 const sample = JSON.parse(readFileSync('docs/samples/usage-response.json', 'utf8'));
@@ -24,8 +24,24 @@ describe('parseUsage', () => {
     expect(usage.weekly?.resetsAt).toBeUndefined();
   });
 
-  it('rejects a response without limits', () => {
+  it('rejects a response without any usable window', () => {
     expect(() => parseUsage({})).toThrow(UsageError);
+  });
+
+  it('prefers the exact kind over the first entry of a group', () => {
+    const usage = parseUsage({
+      limits: [
+        { kind: 'weekly_opus', group: 'weekly', percent: 90 },
+        { kind: 'weekly_all', group: 'weekly', percent: 12 },
+      ],
+    });
+    expect(usage.weekly?.percent).toBe(12);
+  });
+
+  it('falls back to five_hour and seven_day when limits is missing', () => {
+    const usage = parseUsage({ five_hour: { utilization: 7, resets_at: '2026-10-16T23:40:00Z' }, seven_day: { utilization: 12 } });
+    expect(usage.session?.percent).toBe(7);
+    expect(usage.weekly?.percent).toBe(12);
   });
 });
 
@@ -33,6 +49,7 @@ describe('parseRetryAfter', () => {
   it('reads seconds and HTTP dates', () => {
     expect(parseRetryAfter('30')).toBe(30_000);
     expect(parseRetryAfter('Thu, 01 Jan 1970 00:01:00 GMT', 0)).toBe(60_000);
+    expect(parseRetryAfter('3600000')).toBe(3_600_000);
     expect(parseRetryAfter(null)).toBeUndefined();
     expect(parseRetryAfter('soon')).toBeUndefined();
   });
@@ -44,13 +61,8 @@ describe('fetchUsage', () => {
     await fetchUsage('tok', fetchFn);
     const [url, init] = fetchFn.mock.calls[0];
     expect(url).toBe('https://api.anthropic.com/api/oauth/usage');
+    expect(init.signal).toBeInstanceOf(AbortSignal);
     expect(init.headers).toEqual({ Authorization: 'Bearer tok', 'anthropic-beta': 'oauth-2025-04-20' });
-  });
-
-  it('falls back to /api/usage on 404', async () => {
-    const fetchFn = vi.fn().mockResolvedValueOnce(respond(404)).mockResolvedValueOnce(respond(200));
-    await fetchUsage('tok', fetchFn);
-    expect(fetchFn.mock.calls[1][0]).toBe('https://api.anthropic.com/api/usage');
   });
 
   it('maps 429 with Retry-After', async () => {
@@ -69,13 +81,13 @@ describe('fetchUsage', () => {
   });
 });
 
-describe('extractToken', () => {
-  it('reads claudeAiOauth.accessToken', () => {
-    expect(extractToken('{"claudeAiOauth":{"accessToken":"abc"}}')).toBe('abc');
+describe('extractCredentials', () => {
+  it('reads the token and expiry', () => {
+    expect(extractCredentials('{"claudeAiOauth":{"accessToken":"abc","expiresAt":123}}')).toEqual({ token: 'abc', expiresAt: 123 });
   });
 
   it('returns undefined for bad input', () => {
-    expect(extractToken('not json')).toBeUndefined();
-    expect(extractToken('{"claudeAiOauth":{}}')).toBeUndefined();
+    expect(extractCredentials('not json')).toBeUndefined();
+    expect(extractCredentials('{"claudeAiOauth":{}}')).toBeUndefined();
   });
 });
