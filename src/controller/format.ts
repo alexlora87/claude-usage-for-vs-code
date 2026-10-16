@@ -70,18 +70,16 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
-const LABEL_WIDTH = 14;
-
-/** Markdown for the hover: the reset lines sit in a code block so the two columns line up. */
+/** Markdown for the hover: a table, so the columns line up in the regular UI font. */
 export function formatTooltip(usage: Usage, now: number): string | undefined {
-  const lines: string[] = [];
+  const rows: string[] = [];
   if (usage.session?.resetsAt) {
-    lines.push(`${'Session (5hr)'.padEnd(LABEL_WIDTH)}  resets ${formatResetTime(usage.session.resetsAt, now)}`);
+    rows.push(`| Session (5hr) | resets ${formatResetTime(usage.session.resetsAt, now)} |`);
   }
   if (usage.weekly?.resetsAt) {
-    lines.push(`${'Weekly (7 day)'.padEnd(LABEL_WIDTH)}  resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
+    rows.push(`| Weekly (7 day) | resets ${formatResetTime(usage.weekly.resetsAt, now)} |`);
   }
-  return lines.length ? `\`\`\`\n${lines.join('\n')}\n\`\`\`` : undefined;
+  return rows.length ? ['| | |', '|:--|:--|', ...rows].join('\n') : undefined;
 }
 
 const ERROR_TEXT: Record<UsageErrorKind, string> = {
