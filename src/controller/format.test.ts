@@ -105,18 +105,18 @@ describe('buildView', () => {
   const base = { stale: false, loading: false };
 
   it('renders the default view', () => {
-    expect(buildView({ ...base, usage }, false, icon, now).text).toBe('$(sparkle) Claude Usage 5h * 32% · 0h 7m | 7d * 4% · 6d 21h');
+    expect(buildView({ ...base, usage }, false, icon, now).text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h');
   });
 
   it('renders the extended view', () => {
     expect(buildView({ ...base, usage }, true, icon, now).text).toBe(
-      '$(sparkle) Claude Usage Session (5hr) * 32% · Resets in 0h 7m | Weekly (7 day) * 4% · Resets in 6d 21h',
+      '$(sparkle) Claude Usage · Session (5hr) * 32% · Resets in 0h 7m | Weekly (7 day) * 4% · Resets in 6d 21h',
     );
   });
 
   it('marks stale data with ~ and explains why', () => {
     const view = buildView({ ...base, usage, stale: true, error: { kind: 'rate-limited', message: 'Rate limited by the API' }, retryAt: now + 90_000 }, false, icon, now);
-    expect(view.text).toContain('Claude Usage ~5h');
+    expect(view.text).toContain('Claude Usage · ~5h');
     expect(view.tooltip).toContain('Retrying in 2m');
   });
 

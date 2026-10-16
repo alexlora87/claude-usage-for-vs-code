@@ -131,7 +131,7 @@ export function buildView(state: ViewState, extended: boolean, icon: (percent: n
   const tooltip = [formatTooltip(state.usage, now), state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
-  return { text: `${PREFIX} ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(state.usage) };
+  return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(state.usage) };
 }
 
 function errorTooltip(state: ViewState, now: number): string | undefined {

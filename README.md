@@ -5,13 +5,13 @@ Shows your Claude Code plan usage in the VS Code status bar: the 5-hour session 
 > **Unofficial.** Not affiliated with or endorsed by Anthropic. "Claude" is a trademark of Anthropic.
 
 ```
-✦ Claude Usage 5h ◔ 32% · 0h 7m | 7d ◔ 4% · 6d 21h
+✦ Claude Usage · 5h ◔ 32% · 0h 7m | 7d ◔ 4% · 6d 21h
 ```
 
 With `claudeUsage.extendedView` enabled:
 
 ```
-✦ Claude Usage Session (5hr) ◔ 32% · Resets in 0h 7m | Weekly (7 day) ◔ 4% · Resets in 6d 21h
+✦ Claude Usage · Session (5hr) ◔ 32% · Resets in 0h 7m | Weekly (7 day) ◔ 4% · Resets in 6d 21h
 ```
 
 ## Features
