@@ -54,11 +54,17 @@ export function formatWindow(window: UsageWindow, style: WindowStyle, now: numbe
   return text;
 }
 
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
 /** Exact local reset time in 24-hour format, e.g. `today at 18:45` or `Fri, Oct 23 at 22:10`. */
 export function formatResetTime(date: Date, now: number): string {
   const time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-  if (date.getTime() - now < DAY) {
+  const days = Math.round((startOfDay(date) - startOfDay(new Date(now))) / DAY);
+  if (days <= 0) {
     return `today at ${time}`;
+  }
+  if (days === 1 && date.getTime() - now < DAY) {
+    return `tomorrow at ${time}`;
   }
   const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   return `${day} at ${time}`;
@@ -77,6 +83,7 @@ export function formatTooltip(usage: Usage, now: number): string | undefined {
 
 const ERROR_TEXT: Record<UsageErrorKind, string> = {
   'no-credentials': 'Sign in to Claude Code',
+  'token-expired': 'Open Claude Code',
   unauthorized: 'Sign in again',
   'rate-limited': 'Rate limited',
   offline: 'Offline',

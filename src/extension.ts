@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { StatusBar } from './controller/status_bar';
-import { readAccessToken } from './engine/credentials';
+import { configDir, readAccessToken } from './engine/credentials';
 import { UsageScheduler } from './engine/scheduler';
-import { readCache, writeCache } from './engine/shared_cache';
+import { cacheFile, SharedCache } from './engine/shared_cache';
 import { fetchUsage } from './engine/usage_api';
 
 /** Windows poll the shared cache this often; network requests are still limited by refreshInterval. */
@@ -15,9 +15,10 @@ function refreshIntervalMs(): number {
 
 export function activate(context: vscode.ExtensionContext): void {
   const statusBar = new StatusBar();
+  const cache = new SharedCache(cacheFile(context.globalStorageUri.fsPath, configDir()));
   const scheduler = new UsageScheduler({
-    readCache,
-    writeCache,
+    readCache: () => cache.read(),
+    writeCache: (patch) => cache.write(patch),
     fetchUsage: async () => fetchUsage(await readAccessToken()),
     intervalMs: refreshIntervalMs,
     now: Date.now,

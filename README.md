@@ -33,7 +33,7 @@ With `claudeUsage.extendedView` enabled:
 
 The extension calls `GET https://api.anthropic.com/api/oauth/usage` with your Claude Code OAuth token. This endpoint is **undocumented**, so it can change or disappear without notice and the extension may stop working. The token is only sent to `api.anthropic.com`, is never cached or logged, and the extension collects no telemetry.
 
-Credentials are read from `~/.claude/.credentials.json` (or `$CLAUDE_CONFIG_DIR`), or from the macOS keychain item `Claude Code-credentials`.
+In remote windows (SSH, WSL, containers) the extension runs on the remote host, so it reads that host's credentials. Credentials are read from `~/.claude/.credentials.json` (or `$CLAUDE_CONFIG_DIR`), or from the macOS keychain item `Claude Code-credentials`.
 
 ## Development
 

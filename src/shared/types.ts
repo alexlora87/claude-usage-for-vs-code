@@ -10,7 +10,7 @@ export interface Usage {
   weekly?: UsageWindow;
 }
 
-export type UsageErrorKind = 'no-credentials' | 'unauthorized' | 'rate-limited' | 'offline' | 'unknown';
+export type UsageErrorKind = 'no-credentials' | 'token-expired' | 'unauthorized' | 'rate-limited' | 'offline' | 'unknown';
 
 export class UsageError extends Error {
   constructor(
