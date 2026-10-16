@@ -1,0 +1,68 @@
+{
+  "name": "claude-usage-vscode",
+  "displayName": "Claude Usage for VS Code",
+  "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar.",
+  "version": "0.0.1",
+  "publisher": "alexlora87",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/vscode": "1.90.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "svg2ttf": "^6.1.0",
+    "ttf2woff": "^3.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeUsage.refresh",
+        "title": "Claude Usage: Refresh"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "claudeUsage.refresh",
+        "key": "ctrl+alt+u",
+        "mac": "cmd+alt+u"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Usage",
+      "properties": {
+        "claudeUsage.refreshInterval": {
+          "type": "number",
+          "default": 120,
+          "minimum": 30,
+          "maximum": 3600,
+          "description": "Seconds between usage requests."
+        },
+        "claudeUsage.extendedView": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show full labels (Session (5hr), Weekly (7 day), Resets in) in the status bar."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "watch": "node scripts/build.js --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "package": "vsce package"
+  }
+}
