@@ -2,10 +2,9 @@
   "name": "claude-usage-vscode",
   "displayName": "Claude Usage for VS Code",
   "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "alexlora87",
   "license": "MIT",
-  "private": true,
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -360,6 +359,17 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "package": "vsce package",
-    "icons": "node scripts/build_icons.js"
+    "icons": "node scripts/build_icons.js",
+    "vscode:prepublish": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "usage",
+    "status bar",
+    "claude code"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexlora87/claude-usage-for-vs-code.git"
   }
 }
