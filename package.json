@@ -4,6 +4,7 @@
   "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar.",
   "version": "0.1.0",
   "publisher": "alexlora87",
+  "icon": "resources/icon.png",
   "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
