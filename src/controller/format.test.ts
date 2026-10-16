@@ -78,18 +78,18 @@ describe('reset time', () => {
     expect(formatResetTime(new Date(2026, 9, 23, 22, 10), now)).toBe('Fri, Oct 23 at 22:10');
   });
 
-  it('renders both reset times as rows of one table', () => {
+  it('renders one line per window with a middle dot', () => {
     const reset = new Date(2026, 9, 16, 18, 45);
     const tooltip = formatTooltip({ session: { percent: 1, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } }, now);
     expect(tooltip).toBe(
-      '| | |\n|:--|:--|\n| Session (5hr) | resets today at 18:45 |\n| Weekly (7 day) | resets today at 18:45 |',
+      'Session (5hr) · resets today at 18:45  \nWeekly (7 day) · resets today at 18:45',
     );
   });
 
   it('omits lines without a reset time, and the whole tooltip when none has one', () => {
     const session = { percent: 1, resetsAt: new Date(2026, 9, 16, 18, 45) };
     expect(formatTooltip({ session, weekly: { percent: 2 } }, now)).toBe(
-      '| | |\n|:--|:--|\n| Session (5hr) | resets today at 18:45 |',
+      'Session (5hr) · resets today at 18:45',
     );
     expect(formatTooltip({ session: { percent: 1 } }, now)).toBeUndefined();
   });

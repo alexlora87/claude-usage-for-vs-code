@@ -70,16 +70,16 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
-/** Markdown for the hover: a table, so the columns line up in the regular UI font. */
+/** Markdown for the hover: one line per window, joined with a hard line break. */
 export function formatTooltip(usage: Usage, now: number): string | undefined {
-  const rows: string[] = [];
+  const lines: string[] = [];
   if (usage.session?.resetsAt) {
-    rows.push(`| Session (5hr) | resets ${formatResetTime(usage.session.resetsAt, now)} |`);
+    lines.push(`Session (5hr) · resets ${formatResetTime(usage.session.resetsAt, now)}`);
   }
   if (usage.weekly?.resetsAt) {
-    rows.push(`| Weekly (7 day) | resets ${formatResetTime(usage.weekly.resetsAt, now)} |`);
+    lines.push(`Weekly (7 day) · resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
   }
-  return rows.length ? ['| | |', '|:--|:--|', ...rows].join('\n') : undefined;
+  return lines.length ? lines.join('  \n') : undefined;
 }
 
 const ERROR_TEXT: Record<UsageErrorKind, string> = {
