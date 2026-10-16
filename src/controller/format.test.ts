@@ -78,9 +78,18 @@ describe('reset time', () => {
     expect(formatResetTime(new Date(2026, 9, 23, 22, 10), now)).toBe('Fri, Oct 23 at 22:10');
   });
 
+  it('aligns both reset times in one column', () => {
+    const reset = new Date(2026, 9, 16, 18, 45);
+    const tooltip = formatTooltip({ session: { percent: 1, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } }, now)!;
+    const [, session, weekly] = tooltip.split('\n');
+    expect(session.indexOf('resets')).toBe(weekly.indexOf('resets'));
+  });
+
   it('omits lines without a reset time, and the whole tooltip when none has one', () => {
     const session = { percent: 1, resetsAt: new Date(2026, 9, 16, 18, 45) };
-    expect(formatTooltip({ session, weekly: { percent: 2 } }, now)).toBe('Session (5hr)    resets today at 18:45');
+    expect(formatTooltip({ session, weekly: { percent: 2 } }, now)).toBe(
+      '```\nSession (5hr)   resets today at 18:45\n```',
+    );
     expect(formatTooltip({ session: { percent: 1 } }, now)).toBeUndefined();
   });
 });
@@ -113,7 +122,7 @@ describe('buildView', () => {
   it('shows the error reason and retry time without data', () => {
     const view = buildView({ ...base, error: { kind: 'no-credentials', message: 'Credentials not found' }, retryAt: now + 30_000 }, false, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage: Sign in to Claude Code');
-    expect(view.tooltip).toBe('Credentials not found\nRetrying in 30s');
+    expect(view.tooltip).toBe('Credentials not found\n\nRetrying in 30s');
   });
 
   it('uses the warning level of the worst window', () => {

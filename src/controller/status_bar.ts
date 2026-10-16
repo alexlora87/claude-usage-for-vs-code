@@ -29,7 +29,7 @@ export class StatusBar implements vscode.Disposable {
     const extended = vscode.workspace.getConfiguration('claudeUsage').get<boolean>('extendedView', false);
     const view = buildView(this.state, extended, iconFor, Date.now());
     this.item.text = view.text;
-    this.item.tooltip = view.tooltip;
+    this.item.tooltip = view.tooltip ? new vscode.MarkdownString(view.tooltip) : undefined;
     this.item.backgroundColor = BACKGROUNDS[view.level];
   }
 

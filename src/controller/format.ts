@@ -70,15 +70,18 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
+const LABEL_WIDTH = 14;
+
+/** Markdown for the hover: the reset lines sit in a code block so the two columns line up. */
 export function formatTooltip(usage: Usage, now: number): string | undefined {
   const lines: string[] = [];
   if (usage.session?.resetsAt) {
-    lines.push(`Session (5hr)    resets ${formatResetTime(usage.session.resetsAt, now)}`);
+    lines.push(`${'Session (5hr)'.padEnd(LABEL_WIDTH)}  resets ${formatResetTime(usage.session.resetsAt, now)}`);
   }
   if (usage.weekly?.resetsAt) {
-    lines.push(`Weekly (7 day)   resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
+    lines.push(`${'Weekly (7 day)'.padEnd(LABEL_WIDTH)}  resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
   }
-  return lines.length ? lines.join('\n') : undefined;
+  return lines.length ? `\`\`\`\n${lines.join('\n')}\n\`\`\`` : undefined;
 }
 
 const ERROR_TEXT: Record<UsageErrorKind, string> = {
@@ -140,7 +143,7 @@ function errorTooltip(state: ViewState, now: number): string | undefined {
   let text = state.error.message;
   if (state.retryAt) {
     const seconds = Math.max(1, Math.ceil((state.retryAt - now) / 1000));
-    text += `\nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
+    text += `\n\nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
   }
   return text;
 }

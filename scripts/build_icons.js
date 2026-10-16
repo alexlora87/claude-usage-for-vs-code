@@ -6,10 +6,10 @@ const path = require('node:path');
 const svg2ttf = require('svg2ttf');
 const ttf2woff = require('ttf2woff');
 
-const FONT_VERSION = 'v1';
+const FONT_VERSION = 'v2';
 const STEPS = 21;
 const FIRST_CODEPOINT = 0xe000;
-const CENTER = { x: 500, y: 300 };
+const CENTER = { x: 500, y: 380 };
 const OUTLINE = { outer: 400, inner: 350 };
 const FILL = { pie: [0, 290], ring: [200, 290] };
 
