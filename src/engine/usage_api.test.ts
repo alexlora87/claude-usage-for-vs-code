@@ -4,7 +4,7 @@ import { UsageError } from '../shared/types';
 import { extractCredentials } from './credentials';
 import { fetchUsage, parseRetryAfter, parseUsage } from './usage_api';
 
-const sample = JSON.parse(readFileSync('docs/samples/usage-response.json', 'utf8'));
+const sample = JSON.parse(readFileSync('src/engine/__fixtures__/usage-response.json', 'utf8'));
 
 function respond(status: number, body: unknown = sample, headers: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), { status, headers });
