@@ -36,7 +36,7 @@ export function formatMoney(amount: number, currency: string): string {
 
 export function formatSpend(spend: Spend, extended: boolean, icon: string): string {
   const amounts = `${formatMoney(spend.used, spend.currency)} ${extended ? 'of' : '/'} ${formatMoney(spend.limit, spend.currency)}`;
-  const text = `${extended ? 'Monthly spend' : 'Spend'} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
+  const text = `${extended ? 'Monthly credits' : 'Credits'} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
   return spend.limitReached ? `${text} · limit reached` : text;
 }
 

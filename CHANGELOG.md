@@ -6,7 +6,7 @@
 
 ## 0.2.0
 
-- Monthly spend and limit for accounts billed by money (for example Enterprise), shown only when the account has extra usage enabled with a limit.
+- Monthly credits and limit for accounts billed by money (for example Enterprise), shown only when the account has extra usage enabled with a limit.
 - `claudeUsage.showSpend` setting (`auto` or `never`).
 - The spend counts for the 70 % and 90 % warning colors, and shows when the limit is reached.
 
