@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Usage, UsageErrorKind } from '../shared/types';
+import { Spend, Usage, UsageErrorKind } from '../shared/types';
 
 /** State shared by every VS Code window of the same user and account. */
 export interface CacheData {
@@ -16,6 +16,15 @@ export interface CacheData {
 }
 
 type RawWindow = { percent: number; resetsAt?: string };
+
+/** The cache may come from another version or be corrupted, so only well-formed spend is kept. */
+function reviveSpend(raw?: Partial<Spend>): Spend | undefined {
+  const numbers = [raw?.used, raw?.limit, raw?.percent];
+  if (!raw || numbers.some((n) => typeof n !== 'number') || typeof raw.currency !== 'string') {
+    return undefined;
+  }
+  return raw as Spend;
+}
 
 function reviveWindow(raw?: RawWindow) {
   return raw ? { percent: raw.percent, resetsAt: raw.resetsAt ? new Date(raw.resetsAt) : undefined } : undefined;
@@ -40,7 +49,7 @@ export class SharedCache {
     try {
       const raw = JSON.parse(readFileSync(this.path, 'utf8'));
       if (raw.usage) {
-        raw.usage = { session: reviveWindow(raw.usage.session), weekly: reviveWindow(raw.usage.weekly) };
+        raw.usage = { session: reviveWindow(raw.usage.session), weekly: reviveWindow(raw.usage.weekly), spend: reviveSpend(raw.usage.spend) };
       }
       this.memory = raw;
     } catch {

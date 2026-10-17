@@ -1,5 +1,5 @@
 import type { ViewState } from '../engine/scheduler';
-import { Usage, UsageErrorKind, UsageWindow } from '../shared/types';
+import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
 
@@ -16,10 +16,28 @@ export function levelFor(percent: number): Level {
   return percent >= WARNING_AT ? 'warning' : 'ok';
 }
 
-/** Worst level across the available windows. */
+/** Worst level across the available windows and the monthly spend. */
 export function worstLevel(usage: Usage): Level {
-  const percents = [usage.session, usage.weekly].flatMap((w) => (w ? [w.percent] : []));
+  if (usage.spend?.limitReached) {
+    return 'critical';
+  }
+  const percents = [usage.session, usage.weekly, usage.spend].flatMap((w) => (w ? [w.percent] : []));
   return levelFor(Math.max(0, ...percents));
+}
+
+/** `$7.29`; falls back to `7.29 XYZ` for codes Intl does not know. */
+export function formatMoney(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
+
+export function formatSpend(spend: Spend, extended: boolean, icon: string): string {
+  const amounts = `${formatMoney(spend.used, spend.currency)} ${extended ? 'of' : '/'} ${formatMoney(spend.limit, spend.currency)}`;
+  const text = `${extended ? 'Monthly spend' : 'Spend'} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
+  return spend.limitReached ? `${text} · limit reached` : text;
 }
 
 /** Time left as `0h 7m`; for the long window `6d 21h`, and just minutes under an hour. */
@@ -79,6 +97,10 @@ export function formatTooltip(usage: Usage, now: number): string | undefined {
   if (usage.weekly?.resetsAt) {
     lines.push(`Weekly (7 day) · resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
   }
+  if (usage.spend) {
+    const { used, limit, currency, limitReached } = usage.spend;
+    lines.push(`Monthly spend · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
+  }
   return lines.length ? lines.join('  \n') : undefined;
 }
 
@@ -99,8 +121,14 @@ export interface StatusView {
 
 export const PREFIX = '$(sparkle) Claude Usage';
 
+export interface ViewOptions {
+  extended: boolean;
+  showSpend: boolean;
+}
+
 /** Builds everything the status bar shows from the current state. */
-export function buildView(state: ViewState, extended: boolean, icon: (percent: number) => string, now: number): StatusView {
+export function buildView(state: ViewState, options: ViewOptions, icon: (percent: number) => string, now: number): StatusView {
+  const { extended } = options;
   if (!state.usage) {
     if (state.error) {
       return { text: `${PREFIX}: ${ERROR_TEXT[state.error.kind]}`, tooltip: errorTooltip(state, now), level: 'ok' };
@@ -108,7 +136,8 @@ export function buildView(state: ViewState, extended: boolean, icon: (percent: n
     return { text: `${PREFIX}: loading…`, level: 'ok' };
   }
 
-  const { session, weekly } = state.usage;
+  const usage: Usage = options.showSpend ? state.usage : { ...state.usage, spend: undefined };
+  const { session, weekly, spend } = usage;
   const parts: string[] = [];
   if (session) {
     parts.push(formatWindow(session, {
@@ -127,11 +156,15 @@ export function buildView(state: ViewState, extended: boolean, icon: (percent: n
     }, now));
   }
 
-  const body = parts.length ? parts.join(' | ') : 'no data';
-  const tooltip = [formatTooltip(state.usage, now), state.stale ? errorTooltip(state, now) : undefined]
+  if (spend) {
+    parts.push(formatSpend(spend, extended, icon(spend.percent)));
+  }
+
+  const body = parts.length ? parts.join(' | ') : state.usage.spend ? 'spend hidden' : 'no data';
+  const tooltip = [formatTooltip(usage, now), state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
-  return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(state.usage) };
+  return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage) };
 }
 
 function errorTooltip(state: ViewState, now: number): string | undefined {

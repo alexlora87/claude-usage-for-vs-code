@@ -38,6 +38,44 @@ describe('parseUsage', () => {
     expect(usage.weekly?.percent).toBe(12);
   });
 
+  describe('spend', () => {
+    // Shape taken from Claude Code's own schema for `extra_usage`; amounts are minor units.
+    const extra = { is_enabled: true, monthly_limit: 80000, used_credits: 729, utilization: 0, currency: 'USD' };
+
+    it('converts minor units and works without any window', () => {
+      const usage = parseUsage({ limits: [], extra_usage: extra });
+      expect(usage.session).toBeUndefined();
+      expect(usage.spend).toMatchObject({ used: 7.29, limit: 800, currency: 'USD', limitReached: false });
+      expect(usage.spend?.percent).toBeCloseTo(0.91, 2);
+    });
+
+    it('ignores the spend of the real personal-plan sample', () => {
+      expect(parseUsage(sample).spend).toBeUndefined();
+    });
+
+    it('ignores disabled spend and spend without a limit', () => {
+      const body = { limits: [{ kind: 'session', percent: 5 }] };
+      expect(parseUsage({ ...body, extra_usage: { ...extra, is_enabled: false } }).spend).toBeUndefined();
+      expect(parseUsage({ ...body, extra_usage: { ...extra, monthly_limit: null } }).spend).toBeUndefined();
+    });
+
+    it('uses decimal_places, or the currency digits when absent', () => {
+      expect(parseUsage({ extra_usage: { ...extra, decimal_places: 3 } }).spend?.used).toBe(0.729);
+      expect(parseUsage({ extra_usage: { ...extra, currency: 'JPY' } }).spend?.used).toBe(729);
+    });
+
+    it('ignores a decimal_places value that makes no sense', () => {
+      for (const places of [-1, 1.5, 12]) {
+        expect(parseUsage({ extra_usage: { ...extra, decimal_places: places } }).spend?.used).toBe(7.29);
+      }
+    });
+
+    it('flags a reached limit', () => {
+      expect(parseUsage({ extra_usage: { ...extra, used_credits: 80000 } }).spend?.limitReached).toBe(true);
+      expect(parseUsage({ extra_usage: { ...extra, spend_limit_reached: true } }).spend?.limitReached).toBe(true);
+    });
+  });
+
   it('falls back to five_hour and seven_day when limits is missing', () => {
     const usage = parseUsage({ five_hour: { utilization: 7, resets_at: '2026-10-16T23:40:00Z' }, seven_day: { utilization: 12 } });
     expect(usage.session?.percent).toBe(7);

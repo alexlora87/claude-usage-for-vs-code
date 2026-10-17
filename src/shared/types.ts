@@ -5,9 +5,21 @@ export interface UsageWindow {
   resetsAt?: Date;
 }
 
+/** Monthly extra-usage spend, as on accounts billed by money instead of by window. */
+export interface Spend {
+  /** Amounts in major units of `currency`, e.g. 7.29. */
+  used: number;
+  limit: number;
+  currency: string;
+  /** Percentage of the monthly limit already spent, 0-100. */
+  percent: number;
+  limitReached: boolean;
+}
+
 export interface Usage {
   session?: UsageWindow;
   weekly?: UsageWindow;
+  spend?: Spend;
 }
 
 export type UsageErrorKind = 'no-credentials' | 'token-expired' | 'unauthorized' | 'rate-limited' | 'offline' | 'unknown';
