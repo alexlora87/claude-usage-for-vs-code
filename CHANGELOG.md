@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- The monthly spend hover also shows the amount remaining, the percentage with one decimal and the reset date (the 1st of the next month).
+
 ## 0.2.0
 
 - Monthly spend and limit for accounts billed by money (for example Enterprise), shown only when the account has extra usage enabled with a limit.

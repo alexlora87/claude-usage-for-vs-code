@@ -34,6 +34,13 @@ export function formatMoney(amount: number, currency: string): string {
   }
 }
 
+/** The monthly spend resets on the 1st (UTC) of the next month, as Claude Code's /usage shows it (`Nov 1`). */
+export function formatSpendReset(now: number): string {
+  const date = new Date(now);
+  const reset = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
+  return reset.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
 export function formatSpend(spend: Spend, extended: boolean, icon: string): string {
   const amounts = `${formatMoney(spend.used, spend.currency)} ${extended ? 'of' : '/'} ${formatMoney(spend.limit, spend.currency)}`;
   const text = `${extended ? 'Monthly spend' : 'Spend'} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
@@ -98,8 +105,10 @@ export function formatTooltip(usage: Usage, now: number): string | undefined {
     lines.push(`Weekly (7 day) · resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
   }
   if (usage.spend) {
-    const { used, limit, currency, limitReached } = usage.spend;
+    const { used, limit, currency, percent, limitReached } = usage.spend;
+    const remaining = formatMoney(Math.max(0, limit - used), currency);
     lines.push(`Monthly spend · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
+    lines.push(`${remaining} remaining · ${percent.toFixed(1)}% used · resets ${formatSpendReset(now)}`);
   }
   return lines.length ? lines.join('  \n') : undefined;
 }
