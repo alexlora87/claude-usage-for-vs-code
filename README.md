@@ -1,6 +1,6 @@
 # Claude Usage for VS Code
 
-Shows your Claude Code plan usage in the VS Code status bar: the 5-hour session and the 7-day window, with the percentage used and the time until each resets.
+Shows your Claude Code plan usage in the VS Code status bar: the 5-hour session and the 7-day window (with the percentage used and the time until each resets), and the monthly spend on accounts billed by money.
 
 > **Unofficial.** Not affiliated with or endorsed by Anthropic. "Claude" is a trademark of Anthropic.
 
