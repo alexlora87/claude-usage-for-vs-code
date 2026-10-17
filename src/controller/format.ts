@@ -36,7 +36,7 @@ export function formatMoney(amount: number, currency: string): string {
 
 export function formatSpend(spend: Spend, extended: boolean, icon: string): string {
   const amounts = `${formatMoney(spend.used, spend.currency)} ${extended ? 'of' : '/'} ${formatMoney(spend.limit, spend.currency)}`;
-  const text = `${extended ? 'Monthly credits' : 'Credits'} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
+  const text = `${extended ? 'Monthly Credits' : 'Credits'} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
   return spend.limitReached ? `${text} · limit reached` : text;
 }
 
@@ -100,7 +100,7 @@ export function formatTooltip(usage: Usage, now: number): string | undefined {
   if (usage.spend) {
     const { used, limit, currency, percent, limitReached } = usage.spend;
     const remaining = formatMoney(Math.max(0, limit - used), currency);
-    lines.push(`Monthly credits · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
+    lines.push(`Monthly Credits · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
     lines.push(`${remaining} remaining · ${percent.toFixed(1)}% used`);
   }
   return lines.length ? lines.join('  \n') : undefined;

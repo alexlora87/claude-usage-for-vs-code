@@ -136,13 +136,13 @@ describe('buildView', () => {
   it('shows only the spend when the account has no windows', () => {
     const view = buildView({ ...base, usage: { spend } }, compact, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage · Credits $7.29 / $800.00 * 1%');
-    expect(view.tooltip).toBe('Monthly credits · $7.29 of $800.00  \n$792.71 remaining · 0.9% used');
+    expect(view.tooltip).toBe('Monthly Credits · $7.29 of $800.00  \n$792.71 remaining · 0.9% used');
     expect(view.level).toBe('ok');
   });
 
   it('uses full wording for the spend in the extended view', () => {
     expect(buildView({ ...base, usage: { spend } }, extendedView, icon, now).text).toBe(
-      '$(sparkle) Claude Usage · Monthly credits $7.29 of $800.00 * 1%',
+      '$(sparkle) Claude Usage · Monthly Credits $7.29 of $800.00 * 1%',
     );
   });
 
@@ -154,7 +154,7 @@ describe('buildView', () => {
   it('hides the spend when showSpend is off', () => {
     const view = buildView({ ...base, usage: { ...usage, spend } }, { extended: false, showSpend: false }, icon, now);
     expect(view.text).not.toContain('Credits');
-    expect(view.tooltip).not.toContain('Monthly credits');
+    expect(view.tooltip).not.toContain('Monthly Credits');
   });
 
   it('does not look like an error when only the spend exists and it is hidden', () => {
