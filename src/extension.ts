@@ -45,7 +45,7 @@ export function activate(context: vscode.ExtensionContext): void {
     { dispose: () => clearInterval(timer) },
     vscode.commands.registerCommand('claudeUsage.refresh', () => tick(true)),
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('claudeUsage.extendedView')) {
+      if (e.affectsConfiguration('claudeUsage.extendedView') || e.affectsConfiguration('claudeUsage.showSpend')) {
         statusBar.render();
       }
     }),

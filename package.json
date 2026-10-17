@@ -1,8 +1,8 @@
 {
   "name": "claude-usage-vscode",
   "displayName": "Claude Usage for VS Code",
-  "description": "Unofficial. Shows your Claude Code usage (5-hour session and 7-day window) in the status bar. Not affiliated with Anthropic.",
-  "version": "0.1.0",
+  "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar, and the monthly spend on accounts billed by money.",
+  "version": "0.2.0",
   "publisher": "alexlora87",
   "icon": "resources/icon.png",
   "license": "MIT",
@@ -54,6 +54,16 @@
           "type": "boolean",
           "default": false,
           "description": "Show full labels (Session (5hr), Weekly (7 day), Resets in) in the status bar."
+        },
+        "claudeUsage.showSpend": {
+          "type": "string",
+          "enum": ["auto", "never"],
+          "enumDescriptions": [
+            "Show the monthly spend when the account has extra usage enabled with a limit.",
+            "Never show the monthly spend."
+          ],
+          "default": "auto",
+          "description": "Monthly spend, for accounts billed by money instead of by usage window."
         }
       }
     },

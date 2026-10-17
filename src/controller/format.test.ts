@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
+import { buildView, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -103,30 +103,78 @@ describe('buildView', () => {
   };
   const icon = () => '*';
   const base = { stale: false, loading: false };
+  const compact = { extended: false, showSpend: true };
+  const extendedView = { extended: true, showSpend: true };
+  const spend = { used: 7.29, limit: 800, currency: 'USD', percent: 0.91, limitReached: false };
 
   it('renders the default view', () => {
-    expect(buildView({ ...base, usage }, false, icon, now).text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h');
+    expect(buildView({ ...base, usage }, compact, icon, now).text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h');
   });
 
   it('renders the extended view', () => {
-    expect(buildView({ ...base, usage }, true, icon, now).text).toBe(
+    expect(buildView({ ...base, usage }, extendedView, icon, now).text).toBe(
       '$(sparkle) Claude Usage · Session (5hr) * 32% · Resets in 0h 7m | Weekly (7 day) * 4% · Resets in 6d 21h',
     );
   });
 
   it('marks stale data with ~ and explains why', () => {
-    const view = buildView({ ...base, usage, stale: true, error: { kind: 'rate-limited', message: 'Rate limited by the API' }, retryAt: now + 90_000 }, false, icon, now);
+    const view = buildView({ ...base, usage, stale: true, error: { kind: 'rate-limited', message: 'Rate limited by the API' }, retryAt: now + 90_000 }, compact, icon, now);
     expect(view.text).toContain('Claude Usage · ~5h');
     expect(view.tooltip).toContain('Retrying in 2m');
   });
 
   it('shows the error reason and retry time without data', () => {
-    const view = buildView({ ...base, error: { kind: 'no-credentials', message: 'Credentials not found' }, retryAt: now + 30_000 }, false, icon, now);
+    const view = buildView({ ...base, error: { kind: 'no-credentials', message: 'Credentials not found' }, retryAt: now + 30_000 }, compact, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage: Sign in to Claude Code');
     expect(view.tooltip).toBe('Credentials not found  \nRetrying in 30s');
   });
 
   it('uses the warning level of the worst window', () => {
-    expect(buildView({ ...base, usage: { session: { percent: 95 } } }, false, icon, now).level).toBe('critical');
+    expect(buildView({ ...base, usage: { session: { percent: 95 } } }, compact, icon, now).level).toBe('critical');
+  });
+
+  it('shows only the spend when the account has no windows', () => {
+    const view = buildView({ ...base, usage: { spend } }, compact, icon, now);
+    expect(view.text).toBe('$(sparkle) Claude Usage · Spend $7.29 / $800.00 * 1%');
+    expect(view.tooltip).toBe('Monthly spend · $7.29 of $800.00');
+    expect(view.level).toBe('ok');
+  });
+
+  it('uses full wording for the spend in the extended view', () => {
+    expect(buildView({ ...base, usage: { spend } }, extendedView, icon, now).text).toBe(
+      '$(sparkle) Claude Usage · Monthly spend $7.29 of $800.00 * 1%',
+    );
+  });
+
+  it('appends the spend after the windows', () => {
+    const text = buildView({ ...base, usage: { ...usage, spend } }, compact, icon, now).text;
+    expect(text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h | Spend $7.29 / $800.00 * 1%');
+  });
+
+  it('hides the spend when showSpend is off', () => {
+    const view = buildView({ ...base, usage: { ...usage, spend } }, { extended: false, showSpend: false }, icon, now);
+    expect(view.text).not.toContain('Spend');
+    expect(view.tooltip).not.toContain('Monthly spend');
+  });
+
+  it('does not look like an error when only the spend exists and it is hidden', () => {
+    const view = buildView({ ...base, usage: { spend } }, { extended: false, showSpend: false }, icon, now);
+    expect(view.text).toBe('$(sparkle) Claude Usage · spend hidden');
+  });
+
+  it('warns from 70 % of the monthly limit and flags a reached limit', () => {
+    const high = { ...spend, used: 600, percent: 75 };
+    expect(buildView({ ...base, usage: { spend: high } }, compact, icon, now).level).toBe('warning');
+    const reached = buildView({ ...base, usage: { spend: { ...spend, limitReached: true } } }, compact, icon, now);
+    expect(reached.level).toBe('critical');
+    expect(reached.text).toContain('· limit reached');
+  });
+});
+
+describe('formatMoney', () => {
+  it('formats known currencies and falls back for unknown codes', () => {
+    expect(formatMoney(7.29, 'USD')).toBe('$7.29');
+    expect(formatMoney(800, 'USD')).toBe('$800.00');
+    expect(formatMoney(7.5, 'XXXX')).toBe('7.50 XXXX');
   });
 });

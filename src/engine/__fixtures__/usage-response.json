@@ -1,8 +1,42 @@
 {
-  "five_hour": { "utilization": 7.0, "resets_at": "2026-10-16T23:40:00.021409+00:00" },
-  "seven_day": { "utilization": 12.0, "resets_at": "2026-10-22T16:00:00.021429+00:00" },
+  "five_hour": {
+    "utilization": 7,
+    "resets_at": "2026-10-16T23:40:00.021409+00:00"
+  },
+  "seven_day": {
+    "utilization": 12,
+    "resets_at": "2026-10-22T16:00:00.021429+00:00"
+  },
   "limits": [
-    { "kind": "session", "group": "session", "percent": 7, "severity": "normal", "resets_at": "2026-10-16T23:40:00.021409+00:00", "scope": null, "is_active": false },
-    { "kind": "weekly_all", "group": "weekly", "percent": 12, "severity": "normal", "resets_at": "2026-10-22T16:00:00.021429+00:00", "scope": null, "is_active": true }
-  ]
+    {
+      "kind": "session",
+      "group": "session",
+      "percent": 7,
+      "severity": "normal",
+      "resets_at": "2026-10-16T23:40:00.021409+00:00",
+      "scope": null,
+      "is_active": false
+    },
+    {
+      "kind": "weekly_all",
+      "group": "weekly",
+      "percent": 12,
+      "severity": "normal",
+      "resets_at": "2026-10-22T16:00:00.021429+00:00",
+      "scope": null,
+      "is_active": true
+    }
+  ],
+  "extra_usage": {
+    "is_enabled": false,
+    "monthly_limit": null,
+    "used_credits": null,
+    "utilization": null,
+    "currency": null,
+    "decimal_places": null,
+    "disabled_reason": null,
+    "user_disabled": false,
+    "spend_limit_reached": false,
+    "credits_ever_enabled": false
+  }
 }
