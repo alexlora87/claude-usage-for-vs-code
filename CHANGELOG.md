@@ -2,7 +2,7 @@
 
 ## 0.2.1
 
-- The monthly spend hover also shows the amount remaining, the percentage with one decimal and the reset date (the 1st of the next month).
+- The monthly spend hover also shows the amount remaining and the percentage with one decimal.
 
 ## 0.2.0
 

@@ -17,7 +17,7 @@ With `claudeUsage.extendedView` enabled:
 ## Features
 
 - Reads the credentials Claude Code already stores; there is no separate login.
-- Accounts billed by money (for example Enterprise) get their monthly spend and limit: `✦ Claude Usage · Spend $7.29 / $800.00 ◔ 1%`. The hover adds the amount remaining and the reset date (the 1st of the next month). It only appears when the account has extra usage enabled with a limit.
+- Accounts billed by money (for example Enterprise) get their monthly spend and limit: `✦ Claude Usage · Spend $7.29 / $800.00 ◔ 1%`. The hover adds the amount remaining and the exact percentage. It only appears when the account has extra usage enabled with a limit.
 - The status bar turns yellow from 70 % and red from 90 % (the worst of the windows and the monthly spend).
 - Hover for the exact local reset time of each window (24-hour format).
 - Several VS Code windows share one request through a cache file, and back off on rate limits (HTTP 429). While a refresh is failing, the last good value stays visible marked with `~`.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, formatMoney, formatRemaining, formatSpendReset, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
+import { buildView, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -136,7 +136,7 @@ describe('buildView', () => {
   it('shows only the spend when the account has no windows', () => {
     const view = buildView({ ...base, usage: { spend } }, compact, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage · Spend $7.29 / $800.00 * 1%');
-    expect(view.tooltip).toBe('Monthly spend · $7.29 of $800.00  \n$792.71 remaining · 0.9% used · resets Nov 1');
+    expect(view.tooltip).toBe('Monthly spend · $7.29 of $800.00  \n$792.71 remaining · 0.9% used');
     expect(view.level).toBe('ok');
   });
 
@@ -168,17 +168,6 @@ describe('buildView', () => {
     const reached = buildView({ ...base, usage: { spend: { ...spend, limitReached: true } } }, compact, icon, now);
     expect(reached.level).toBe('critical');
     expect(reached.text).toContain('· limit reached');
-  });
-});
-
-describe('formatSpendReset', () => {
-  it('points to the 1st of the next month in UTC', () => {
-    expect(formatSpendReset(Date.UTC(2026, 9, 16, 12))).toBe('Nov 1');
-    expect(formatSpendReset(Date.UTC(2026, 9, 31, 23, 59))).toBe('Nov 1');
-  });
-
-  it('rolls over to January in December', () => {
-    expect(formatSpendReset(Date.UTC(2026, 11, 20))).toBe('Jan 1');
   });
 });
 
