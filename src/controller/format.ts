@@ -100,7 +100,7 @@ export function formatTooltip(usage: Usage, now: number): string | undefined {
   if (usage.spend) {
     const { used, limit, currency, percent, limitReached } = usage.spend;
     const remaining = formatMoney(Math.max(0, limit - used), currency);
-    lines.push(`Monthly spend · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
+    lines.push(`Monthly credits · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
     lines.push(`${remaining} remaining · ${percent.toFixed(1)}% used`);
   }
   return lines.length ? lines.join('  \n') : undefined;
