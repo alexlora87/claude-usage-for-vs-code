@@ -9,7 +9,7 @@
 
 ### Changed
 
-- The Settings editor lists the settings in a logical order (refresh, view, alerts) instead of alphabetically.
+- The Settings editor lists the settings in a logical order (refresh, view, spend, alerts) instead of alphabetically.
 
 ## 1.0.0
 

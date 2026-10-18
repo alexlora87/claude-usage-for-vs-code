@@ -11,7 +11,20 @@ describe('settings schema', () => {
     expect(new Set(orders).size).toBe(orders.length);
   });
 
-  it('lists the bar size right after the indicator', () => {
-    expect(properties['claudeUsage.barSize'].order).toBe(properties['claudeUsage.indicator'].order! + 1);
+  it('lists the settings in the documented order', () => {
+    const listed = Object.entries(properties)
+      .sort(([, a], [, b]) => a.order! - b.order!)
+      .map(([key]) => key.replace('claudeUsage.', ''));
+    expect(listed).toEqual([
+      'refreshInterval',
+      'windows',
+      'extendedView',
+      'indicator',
+      'barSize',
+      'showSpend',
+      'notifications',
+      'warningThreshold',
+      'criticalThreshold',
+    ]);
   });
 });
