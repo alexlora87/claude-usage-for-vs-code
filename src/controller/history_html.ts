@@ -31,6 +31,12 @@ circle:hover { fill: currentColor; }
 .weekly-dot { color: var(--vscode-charts-orange); }
 .point { fill: currentColor; }
 .spend-dot { color: var(--vscode-charts-green); }
+.past { stroke: var(--vscode-descriptionForeground); stroke-width: 1.25; color: var(--vscode-descriptionForeground); }
+.past.age-1 { opacity: 0.8; }
+.past.age-2 { opacity: 0.6; }
+.past.age-3 { opacity: 0.45; }
+.past.age-4 { opacity: 0.3; }
+.past-dot { color: var(--vscode-descriptionForeground); }
 .connector { stroke: var(--vscode-charts-orange); stroke-dasharray: 2 4; opacity: 0.7; }
 .pace { stroke: var(--vscode-descriptionForeground); stroke-dasharray: 2 5; stroke-width: 1.5; }
 .projection { stroke: var(--vscode-charts-orange); stroke-dasharray: 6 4; }
@@ -48,6 +54,7 @@ circle:hover { fill: currentColor; }
 .weekly-bg { background: var(--vscode-charts-orange); }
 .spend-bg { background: var(--vscode-charts-green); }
 .hot-bg { background: repeating-linear-gradient(45deg, var(--vscode-charts-red) 0 2px, var(--vscode-editor-background) 2px 4px); }
+.past-bg { background: var(--vscode-descriptionForeground); opacity: 0.6; }
 .pace-bg { background: var(--vscode-descriptionForeground); }
 .projection-bg { background: var(--vscode-charts-orange); opacity: 0.6; }
 </style>

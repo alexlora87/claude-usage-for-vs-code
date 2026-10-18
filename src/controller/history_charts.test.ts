@@ -186,6 +186,53 @@ describe('weekly panel', () => {
   });
 });
 
+describe('previous weekly cycles', () => {
+  const end = now + 3 * DAY;
+  const start = end - 7 * DAY;
+  const cycleEnd = (age: number) => end - age * 7 * DAY;
+  const current = weekly(start + DAY, 30, end);
+  const cx = (html: string, css: string) => html.match(new RegExp(`class="${css} point" cx="([0-9.]+)"`))![1];
+
+  it('draws a past reading where the same time of the current cycle falls', () => {
+    const html = renderPanels([weekly(cycleEnd(1) - 7 * DAY + DAY, 50, cycleEnd(1)), current], now, ['weekly']);
+    expect(cx(html, 'past age-1')).toBe(cx(html, 'weekly'));
+    expect(html).toContain('1 previous cycle, peak 50%');
+    expect(html).toContain('<span class="swatch past-bg"></span>Previous cycles');
+  });
+
+  it('shows the real date of a past reading in its tooltip', () => {
+    const at = cycleEnd(1) - 7 * DAY + DAY;
+    const html = renderPanels([weekly(at, 50, cycleEnd(1)), weekly(at + 20 * MIN, 52, cycleEnd(1)), current], now, ['weekly']);
+    const when = new Date(at + 20 * MIN).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+    expect(html).toContain(`Cycle that reset ${new Date(cycleEnd(1)).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })}: 52% · ${when}`);
+  });
+
+  it('draws at most four, the newest ones, with growing age', () => {
+    const olds = [1, 2, 3, 4, 5].map((age) => weekly(cycleEnd(age) - 7 * DAY + DAY, 10 * age, cycleEnd(age)));
+    const html = renderPanels([...olds, current], now, ['weekly']);
+    expect(html.match(/class="past age-\d point"/g)).toEqual(['class="past age-1 point"', 'class="past age-2 point"', 'class="past age-3 point"', 'class="past age-4 point"']);
+    expect(html).toContain('4 previous cycles, peaks 10%, 20%, 30%, 40%');
+  });
+
+  it('does not repeat the current cycle, and draws nothing without earlier ones', () => {
+    const html = renderPanels([current, weekly(start + 2 * DAY, 35, end + 1000)], now, ['weekly']);
+    expect(html).not.toContain('past');
+    expect(html).not.toContain('previous cycle');
+  });
+
+  it('drops a past reading outside its own cycle', () => {
+    const html = renderPanels([weekly(cycleEnd(1) + 3 * DAY, 90, cycleEnd(1)), current], now, ['weekly']);
+    expect(html).not.toContain('past');
+  });
+
+  it('keeps the previous cycles when the current one has ended', () => {
+    const ended = weekly(now - 3 * DAY - HOUR, 60, now - HOUR);
+    const html = renderPanels([weekly(now - 10 * DAY, 20, now - HOUR - 7 * DAY), ended], now, ['weekly']);
+    expect(html).toContain('Last cycle, reset');
+    expect(html).toContain('1 previous cycle, peak 20%');
+  });
+});
+
 describe('spend panel and the allowed panels', () => {
   const samples: Sample[] = [spend(now - 20 * MIN, 100), spend(now - 10 * MIN, 101), session(now - 5 * MIN, 10, now + HOUR), weekly(now - 5 * MIN, 5, now + DAY)];
 
