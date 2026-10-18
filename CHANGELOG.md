@@ -7,6 +7,10 @@
 - `claudeUsage.indicator` setting: `ring` (default, as before) or `bar`, a progress bar next to each percentage.
 - `claudeUsage.barSize` setting: `small` (default), `medium` or `large`, the length of the bar.
 
+### Changed
+
+- The Settings editor lists the settings in a logical order (refresh, view, alerts) instead of alphabetically.
+
 ## 1.0.0
 
 ### Added

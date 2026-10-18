@@ -60,18 +60,37 @@
       "title": "Claude Usage",
       "properties": {
         "claudeUsage.refreshInterval": {
+          "order": 1,
           "type": "number",
           "default": 120,
           "minimum": 30,
           "maximum": 3600,
           "description": "Seconds between usage requests."
         },
+        "claudeUsage.windows": {
+          "order": 2,
+          "type": "string",
+          "enum": [
+            "both",
+            "session",
+            "weekly"
+          ],
+          "enumDescriptions": [
+            "Show the 5-hour session and the 7-day window.",
+            "Show only the 5-hour session.",
+            "Show only the 7-day window."
+          ],
+          "default": "both",
+          "description": "Which usage windows the status bar, the notifications and the history show."
+        },
         "claudeUsage.extendedView": {
+          "order": 3,
           "type": "boolean",
           "default": false,
           "description": "Show full labels (Session (5hr), Weekly (7 day), Resets in) in the status bar."
         },
         "claudeUsage.indicator": {
+          "order": 4,
           "type": "string",
           "enum": [
             "ring",
@@ -85,6 +104,7 @@
           "description": "How the status bar draws the usage next to the percentage."
         },
         "claudeUsage.barSize": {
+          "order": 5,
           "type": "string",
           "enum": [
             "small",
@@ -100,6 +120,7 @@
           "description": "Length of the progress bar. Only used when the indicator is bar."
         },
         "claudeUsage.showSpend": {
+          "order": 6,
           "type": "string",
           "enum": [
             "auto",
@@ -112,27 +133,14 @@
           "default": "auto",
           "description": "Monthly spend, for accounts billed by money instead of by usage window."
         },
-        "claudeUsage.windows": {
-          "type": "string",
-          "enum": [
-            "both",
-            "session",
-            "weekly"
-          ],
-          "enumDescriptions": [
-            "Show the 5-hour session and the 7-day window.",
-            "Show only the 5-hour session.",
-            "Show only the 7-day window."
-          ],
-          "default": "both",
-          "description": "Which usage windows the status bar, the notifications and the history show."
-        },
         "claudeUsage.notifications": {
+          "order": 7,
           "type": "boolean",
           "default": true,
           "description": "Show a notification once per window cycle when usage reaches the warning or the critical threshold."
         },
         "claudeUsage.warningThreshold": {
+          "order": 8,
           "type": "number",
           "default": 70,
           "minimum": 1,
@@ -140,6 +148,7 @@
           "description": "Percentage from which the status bar turns yellow. Must be lower than the critical threshold."
         },
         "claudeUsage.criticalThreshold": {
+          "order": 9,
           "type": "number",
           "default": 90,
           "minimum": 2,
