@@ -60,11 +60,11 @@ describe('session forecast', () => {
   });
 
   it('ignores readings of a previous cycle and what happened before a reset', () => {
-    const previous = [windowSample(now - 55 * MIN, 99, resetsAt - 5 * HOUR), windowSample(now - 45 * MIN, 98, resetsAt - 5 * HOUR)];
+    const previous = [windowSample(now - 55 * MIN, 10, resetsAt - 5 * HOUR), windowSample(now - 45 * MIN, 12, resetsAt - 5 * HOUR)];
     const { session } = computeForecasts([...previous, ...steady], usageAt(45), now);
     expect(Math.round((fullAt(session)! - now) / MIN)).toBe(110);
-    const afterDrop = [windowSample(now - 50 * MIN, 90), ...steady.slice(1).map((s) => ({ ...s }))];
-    // Only the readings after the drop count: 0.5 %/min from 20 %, so 110 min to fill up.
+    const afterDrop = [windowSample(now - 50 * MIN, 90), ...steady.slice(1)];
+    // Only the readings after the drop count: 0.5 %/min from 25 %, so 110 min to fill up.
     expect(Math.round((fullAt(computeForecasts(afterDrop, usageAt(45), now).session)! - now) / MIN)).toBe(110);
   });
 

@@ -55,7 +55,7 @@ function growth(points: Point[], minSpanMs: number): number | undefined {
   return result !== undefined && result > 0 ? result : undefined;
 }
 
-/** Points after the last drop in `drop` direction, i.e. since the window or the month last reset. */
+/** Points after the last reset detected by `isReset`, i.e. since the window or the month last reset. */
 function sinceLastReset(points: Point[], isReset: (previous: number, next: number) => boolean): Point[] {
   for (let i = points.length - 1; i > 0; i--) {
     if (isReset(points[i - 1].value, points[i].value)) {
