@@ -117,6 +117,7 @@ describe('accessibility of the panels', () => {
 
   it('draws no stripes when no session is hot, and never uses inline styles', () => {
     const calm = renderPanels([session(now - 10 * MIN, 30, now + HOUR)], now, ['session']);
+    expect(calm).toContain('<rect class="bar"');
     expect(calm).not.toContain('hot-hatch');
     expect(html).not.toContain('style=');
   });
@@ -216,13 +217,21 @@ describe('previous weekly cycles', () => {
 
   it('does not repeat the current cycle, and draws nothing without earlier ones', () => {
     const html = renderPanels([current, weekly(start + 2 * DAY, 35, end + 1000)], now, ['weekly']);
+    expect(html).toContain('Current cycle, resets');
     expect(html).not.toContain('past');
     expect(html).not.toContain('previous cycle');
   });
 
   it('drops a past reading outside its own cycle', () => {
     const html = renderPanels([weekly(cycleEnd(1) + 3 * DAY, 90, cycleEnd(1)), current], now, ['weekly']);
+    expect(html).toContain('Current cycle, resets');
     expect(html).not.toContain('past');
+  });
+
+  it('skips an earlier cycle without valid readings and still draws four', () => {
+    const olds = [1, 2, 3, 4, 5].map((age) => weekly(cycleEnd(age) - 7 * DAY + DAY, 10 * age, cycleEnd(age)));
+    const html = renderPanels([weekly(cycleEnd(1) + 3 * DAY, 90, cycleEnd(1)), ...olds.slice(1), current], now, ['weekly']);
+    expect(html).toContain('4 previous cycles, peaks 20%, 30%, 40%, 50%');
   });
 
   it('keeps the previous cycles when the current one has ended', () => {

@@ -194,13 +194,13 @@ function pastCycles(all: Cycle[], current: Cycle): Array<{ end: number; peak: nu
   return all
     .filter((c) => c.end < current.end - CYCLE_TOLERANCE_MS)
     .sort((a, b) => b.end - a.end)
-    .slice(0, PAST_CYCLES)
     .map((c) => {
       // A stale reading may carry a time outside its cycle: it does not belong on the chart.
       const points = c.points.filter((p) => p.t >= c.start && p.t <= c.end);
       return { end: c.end, peak: Math.max(0, ...points.map((p) => p.percent)), runs: runsOf(points.map((p) => ({ t: current.start + (p.t - c.start), percent: p.percent, at: p.t }))) };
     })
-    .filter((c) => c.runs.length);
+    .filter((c) => c.runs.length)
+    .slice(0, PAST_CYCLES);
 }
 
 /** The current weekly cycle against an even pace, with where it is on pace to end. */

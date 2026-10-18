@@ -45,8 +45,11 @@ describe('renderHistoryHtml', () => {
     expect(renderHistoryHtml([], now, 'abc')).toContain('No history yet');
   });
 
-  it('allows no scripts and styles only with the nonce', () => {
-    const html = renderHistoryHtml([], now, 'abc');
+  it('allows no scripts and styles only with the nonce, also with the charts drawn', () => {
+    const hot = { t: now - 5 * 60_000, session: { percent: 95, resetsAt: now + 60 * 60_000 }, weekly: { percent: 40, resetsAt: now + 24 * 60 * 60_000 } };
+    const html = renderHistoryHtml([hot], now, 'abc');
+    expect(html).toContain('hot-hatch');
+    expect(html).toContain('class="pace"');
     expect(html).toContain("default-src 'none'; style-src 'nonce-abc'");
     expect(html).toContain('<style nonce="abc">');
     expect(html).not.toContain('<script');

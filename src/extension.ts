@@ -45,7 +45,7 @@ function notify(storageDir: string, account: string, usage: Usage, now: number):
 async function copySummary(state: ViewState): Promise<void> {
   const summary = state.usage && formatSummary(state.usage, readOptions(), Date.now());
   if (!summary) {
-    void vscode.window.showInformationMessage('Claude Usage: no usage to copy yet.');
+    void vscode.window.showInformationMessage('Claude Usage: no current usage to copy.');
     return;
   }
   const asOf = state.stale && state.fetchedAt !== undefined ? ` (as of ${new Date(state.fetchedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })})` : '';
@@ -63,10 +63,9 @@ async function exportHistory(history: History): Promise<void> {
   }
   const now = Date.now();
   const name = `${exportFileName(now)}.csv`;
-  // The home folder, so the file is not left inside a repository by accident; a remote window has no local home to offer.
-  const folder = vscode.workspace.workspaceFolders?.[0]?.uri;
+  // The home folder, so the file is not left inside a repository by accident (in a remote window, that of the remote host).
   const uri = await vscode.window.showSaveDialog({
-    defaultUri: vscode.env.remoteName === undefined || !folder ? vscode.Uri.file(join(homedir(), name)) : vscode.Uri.joinPath(folder, name),
+    defaultUri: vscode.Uri.file(join(homedir(), name)),
     filters: { CSV: ['csv'], JSON: ['json'] },
     title: 'Export Claude Usage history',
   });
@@ -80,7 +79,7 @@ async function exportHistory(history: History): Promise<void> {
     void vscode.window.showErrorMessage(`Claude Usage: could not export the history to ${basename(uri.path)}.`);
     return;
   }
-  void vscode.window.showInformationMessage(`Claude Usage: exported ${samples.length} readings to ${basename(uri.path)}.`);
+  void vscode.window.showInformationMessage(`Claude Usage: exported ${samples.length} reading${samples.length === 1 ? '' : 's'} to ${basename(uri.path)}.`);
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -162,7 +161,7 @@ export function activate(context: vscode.ExtensionContext): void {
       clearMute(mutePath);
       statusBar.render();
       // What crossed a threshold while muted and still holds is told now.
-      if (lastState.usage) {
+      if (lastState.usage && !lastState.stale) {
         notify(storageDir, account, lastState.usage, Date.now());
       }
     }),
