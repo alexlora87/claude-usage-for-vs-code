@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { IconStyle, iconFor } from './icons';
+import { IconStyle, iconFor, iconStyleFrom } from './icons';
 
 const contributed = JSON.parse(readFileSync('package.json', 'utf8')).contributes.icons;
 const STYLES: IconStyle[] = ['ring', 'bar-small', 'bar-medium', 'bar-big'];
@@ -33,9 +33,33 @@ describe('iconFor', () => {
     }
   });
 
+  it('registers 105 glyphs, each with its own character', () => {
+    const characters = Object.values<{ default: { fontCharacter: string } }>(contributed).map((icon) => icon.default.fontCharacter);
+    expect(characters).toHaveLength(105);
+    expect(new Set(characters).size).toBe(105);
+  });
+
   it('registers every glyph in one font file that exists', () => {
     const fonts = new Set(Object.values<{ default: { fontPath: string } }>(contributed).map((icon) => icon.default.fontPath));
     expect(fonts.size).toBe(1);
     expect(existsSync([...fonts][0])).toBe(true);
+  });
+});
+
+describe('iconStyleFrom', () => {
+  it('uses the ring unless the indicator is the bar, whatever the bar size', () => {
+    expect(iconStyleFrom('ring', 'big')).toBe('ring');
+    expect(iconStyleFrom('foo', 'big')).toBe('ring');
+  });
+
+  it('picks the bar of the chosen size', () => {
+    expect(iconStyleFrom('bar', 'small')).toBe('bar-small');
+    expect(iconStyleFrom('bar', 'medium')).toBe('bar-medium');
+    expect(iconStyleFrom('bar', 'big')).toBe('bar-big');
+  });
+
+  it('falls back to the small bar for an unknown size', () => {
+    expect(iconStyleFrom('bar', 'xyz')).toBe('bar-small');
+    expect(iconStyleFrom('bar', '')).toBe('bar-small');
   });
 });
