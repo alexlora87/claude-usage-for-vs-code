@@ -3,6 +3,7 @@ import { computeForecasts, Forecasts } from './controller/forecast';
 import { visibleUsage } from './controller/format';
 import { claim, crossings, markerName, pruneMarkers } from './controller/notifier';
 import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
+import { HistoryView } from './controller/history_view';
 import { StatusBar } from './controller/status_bar';
 import { configDir, readAccessToken } from './engine/credentials';
 import { UsageScheduler } from './engine/scheduler';
@@ -40,6 +41,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const statusBar = new StatusBar();
   const cache = new SharedCache(cacheFile(context.globalStorageUri.fsPath, configDir()));
   const history = new History(historyFile(context.globalStorageUri.fsPath, configDir()));
+  const historyView = new HistoryView(() => history.read());
   const scheduler = new UsageScheduler({
     readCache: () => cache.read(),
     writeCache: (patch) => cache.write(patch),
@@ -63,6 +65,7 @@ export function activate(context: vscode.ExtensionContext): void {
         recordedAt = state.fetchedAt;
         history.record(state.usage, state.fetchedAt);
         forecasts = computeForecasts(history.read(), state.usage, state.fetchedAt);
+        historyView.refresh();
         notify(storageDir, account, state.usage, Date.now());
       }
       statusBar.update(state, forecasts);
@@ -76,8 +79,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     statusBar,
+    historyView,
     { dispose: () => clearInterval(timer) },
     vscode.commands.registerCommand('claudeUsage.refresh', () => tick(true)),
+    vscode.commands.registerCommand('claudeUsage.showHistory', () => historyView.show()),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (SETTINGS_KEYS.some((key) => e.affectsConfiguration(`claudeUsage.${key}`))) {
         statusBar.render();

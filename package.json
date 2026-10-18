@@ -31,6 +31,10 @@
       {
         "command": "claudeUsage.refresh",
         "title": "Claude Usage: Refresh"
+      },
+      {
+        "command": "claudeUsage.showHistory",
+        "title": "Claude Usage: Show History"
       }
     ],
     "keybindings": [
