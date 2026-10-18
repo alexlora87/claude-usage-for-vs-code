@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { IconStyle, iconFor, iconStyleFrom } from './icons';
 
 const contributed = JSON.parse(readFileSync('package.json', 'utf8')).contributes.icons;
-const STYLES: IconStyle[] = ['ring', 'bar-small', 'bar-medium', 'bar-big'];
+const STYLES: IconStyle[] = ['ring', 'bar-small', 'bar-medium', 'bar-large'];
 
 describe('iconFor', () => {
   it('rounds to the nearest 5% and pads the step', () => {
@@ -16,7 +16,7 @@ describe('iconFor', () => {
   it('draws the bar in the same steps, in each length', () => {
     expect(iconFor(0, 'bar-small')).toBe('$(claude-usage-bar-small-00)');
     expect(iconFor(32, 'bar-medium')).toBe('$(claude-usage-bar-medium-30)');
-    expect(iconFor(100, 'bar-big')).toBe('$(claude-usage-bar-big-100)');
+    expect(iconFor(100, 'bar-large')).toBe('$(claude-usage-bar-large-100)');
   });
 
   it('clamps out-of-range values', () => {
@@ -48,14 +48,14 @@ describe('iconFor', () => {
 
 describe('iconStyleFrom', () => {
   it('uses the ring unless the indicator is the bar, whatever the bar size', () => {
-    expect(iconStyleFrom('ring', 'big')).toBe('ring');
-    expect(iconStyleFrom('foo', 'big')).toBe('ring');
+    expect(iconStyleFrom('ring', 'large')).toBe('ring');
+    expect(iconStyleFrom('foo', 'large')).toBe('ring');
   });
 
   it('picks the bar of the chosen size', () => {
     expect(iconStyleFrom('bar', 'small')).toBe('bar-small');
     expect(iconStyleFrom('bar', 'medium')).toBe('bar-medium');
-    expect(iconStyleFrom('bar', 'big')).toBe('bar-big');
+    expect(iconStyleFrom('bar', 'large')).toBe('bar-large');
   });
 
   it('falls back to the small bar for an unknown size', () => {

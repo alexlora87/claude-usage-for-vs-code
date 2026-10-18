@@ -33,7 +33,7 @@ With `claudeUsage.extendedView` enabled:
 | `claudeUsage.refreshInterval` | `120` | Seconds between usage requests (30-3600). |
 | `claudeUsage.extendedView` | `false` | Show full labels instead of the compact ones. |
 | `claudeUsage.indicator` | `ring` | `ring` or `bar`: what is drawn next to each percentage. |
-| `claudeUsage.barSize` | `small` | `small`, `medium` or `big`: length of the bar (only with `indicator` set to `bar`). |
+| `claudeUsage.barSize` | `small` | `small`, `medium` or `large`: length of the bar (only with `indicator` set to `bar`). |
 | `claudeUsage.showSpend` | `auto` | `auto` shows the monthly spend when the account has it; `never` hides it. |
 | `claudeUsage.windows` | `both` | `both`, `session` or `weekly`: which windows the status bar, the notifications and the history show. |
 | `claudeUsage.warningThreshold` | `70` | Percentage from which the status bar turns yellow. |
