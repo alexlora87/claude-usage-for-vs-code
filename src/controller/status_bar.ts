@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ViewState } from '../engine/scheduler';
-import { buildView, Level } from './format';
+import { buildView, Level, thresholdsFrom, ViewOptions, WindowsOption } from './format';
 import { iconFor } from './icons';
 
 const BACKGROUNDS: Record<Level, vscode.ThemeColor | undefined> = {
@@ -27,9 +27,11 @@ export class StatusBar implements vscode.Disposable {
   /** Re-renders with the last state, e.g. after the extendedView setting changes. */
   render(): void {
     const config = vscode.workspace.getConfiguration('claudeUsage');
-    const options = {
+    const options: ViewOptions = {
       extended: config.get<boolean>('extendedView', false),
       showSpend: config.get<string>('showSpend', 'auto') !== 'never',
+      windows: config.get<WindowsOption>('windows', 'both'),
+      thresholds: thresholdsFrom(config.get<number>('warningThreshold', 70), config.get<number>('criticalThreshold', 90)),
     };
     const view = buildView(this.state, options, iconFor, Date.now());
     this.item.text = view.text;

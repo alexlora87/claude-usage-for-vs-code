@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
+import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -11,6 +11,22 @@ describe('levelFor', () => {
     expect(levelFor(70)).toBe('warning');
     expect(levelFor(89)).toBe('warning');
     expect(levelFor(90)).toBe('critical');
+  });
+
+  it('applies custom thresholds', () => {
+    const thresholds = { warning: 50, critical: 80 };
+    expect(levelFor(49, thresholds)).toBe('ok');
+    expect(levelFor(50, thresholds)).toBe('warning');
+    expect(levelFor(80, thresholds)).toBe('critical');
+    expect(worstLevel({ session: { percent: 60 } }, thresholds)).toBe('warning');
+  });
+
+  it('falls back to the defaults when the thresholds are not ordered', () => {
+    expect(thresholdsFrom(50, 80)).toEqual({ warning: 50, critical: 80 });
+    expect(thresholdsFrom(90, 70)).toEqual(DEFAULT_THRESHOLDS);
+    expect(thresholdsFrom(70, 70)).toEqual(DEFAULT_THRESHOLDS);
+    expect(thresholdsFrom(0, 90)).toEqual(DEFAULT_THRESHOLDS);
+    expect(thresholdsFrom(70, 101)).toEqual(DEFAULT_THRESHOLDS);
   });
 
   it('uses the worst available window', () => {
@@ -103,8 +119,8 @@ describe('buildView', () => {
   };
   const icon = () => '*';
   const base = { stale: false, loading: false };
-  const compact = { extended: false, showSpend: true };
-  const extendedView = { extended: true, showSpend: true };
+  const compact = { extended: false, showSpend: true, windows: 'both' as const, thresholds: DEFAULT_THRESHOLDS };
+  const extendedView = { ...compact, extended: true };
   const spend = { used: 7.29, limit: 800, currency: 'USD', percent: 0.91, limitReached: false };
 
   it('renders the default view', () => {
@@ -151,14 +167,31 @@ describe('buildView', () => {
     expect(text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h | Credits $7.29 / $800.00 * 1%');
   });
 
+  it('shows only the selected window', () => {
+    expect(buildView({ ...base, usage }, { ...compact, windows: 'session' }, icon, now).text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m');
+    expect(buildView({ ...base, usage }, { ...compact, windows: 'weekly' }, icon, now).text).toBe('$(sparkle) Claude Usage · 7d * 4% · 6d 21h');
+  });
+
+  it('ignores hidden windows for the warning level and the hover', () => {
+    const high = { session: { percent: 95, resetsAt: new Date(now + 7 * MIN) }, weekly: { percent: 4, resetsAt: new Date(now + DAY) } };
+    const view = buildView({ ...base, usage: high }, { ...compact, windows: 'weekly' }, icon, now);
+    expect(view.level).toBe('ok');
+    expect(view.tooltip).not.toContain('Session');
+  });
+
+  it('colors with custom thresholds', () => {
+    const view = buildView({ ...base, usage }, { ...compact, thresholds: { warning: 20, critical: 30 } }, icon, now);
+    expect(view.level).toBe('critical');
+  });
+
   it('hides the spend when showSpend is off', () => {
-    const view = buildView({ ...base, usage: { ...usage, spend } }, { extended: false, showSpend: false }, icon, now);
+    const view = buildView({ ...base, usage: { ...usage, spend } }, { ...compact, showSpend: false }, icon, now);
     expect(view.text).not.toContain('Credits');
     expect(view.tooltip).not.toContain('Monthly Credits');
   });
 
   it('does not look like an error when only the spend exists and it is hidden', () => {
-    const view = buildView({ ...base, usage: { spend } }, { extended: false, showSpend: false }, icon, now);
+    const view = buildView({ ...base, usage: { spend } }, { ...compact, showSpend: false }, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage · spend hidden');
   });
 

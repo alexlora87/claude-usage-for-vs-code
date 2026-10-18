@@ -3,26 +3,36 @@ import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
 
-const WARNING_AT = 70;
-const CRITICAL_AT = 90;
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-export function levelFor(percent: number): Level {
-  if (percent >= CRITICAL_AT) {
+export interface Thresholds {
+  warning: number;
+  critical: number;
+}
+
+export const DEFAULT_THRESHOLDS: Thresholds = { warning: 70, critical: 90 };
+
+/** Uses the configured thresholds only when they are ordered; otherwise the defaults. */
+export function thresholdsFrom(warning: number, critical: number): Thresholds {
+  return warning > 0 && warning < critical && critical <= 100 ? { warning, critical } : DEFAULT_THRESHOLDS;
+}
+
+export function levelFor(percent: number, thresholds: Thresholds = DEFAULT_THRESHOLDS): Level {
+  if (percent >= thresholds.critical) {
     return 'critical';
   }
-  return percent >= WARNING_AT ? 'warning' : 'ok';
+  return percent >= thresholds.warning ? 'warning' : 'ok';
 }
 
 /** Worst level across the available windows and the monthly spend. */
-export function worstLevel(usage: Usage): Level {
+export function worstLevel(usage: Usage, thresholds: Thresholds = DEFAULT_THRESHOLDS): Level {
   if (usage.spend?.limitReached) {
     return 'critical';
   }
   const percents = [usage.session, usage.weekly, usage.spend].flatMap((w) => (w ? [w.percent] : []));
-  return levelFor(Math.max(0, ...percents));
+  return levelFor(Math.max(0, ...percents), thresholds);
 }
 
 /** `$7.29`; falls back to `7.29 XYZ` for codes Intl does not know. */
@@ -123,9 +133,13 @@ export interface StatusView {
 
 export const PREFIX = '$(sparkle) Claude Usage';
 
+export type WindowsOption = 'both' | 'session' | 'weekly';
+
 export interface ViewOptions {
   extended: boolean;
   showSpend: boolean;
+  windows: WindowsOption;
+  thresholds: Thresholds;
 }
 
 /** Builds everything the status bar shows from the current state. */
@@ -138,7 +152,11 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
     return { text: `${PREFIX}: loading…`, level: 'ok' };
   }
 
-  const usage: Usage = options.showSpend ? state.usage : { ...state.usage, spend: undefined };
+  const usage: Usage = {
+    session: options.windows === 'weekly' ? undefined : state.usage.session,
+    weekly: options.windows === 'session' ? undefined : state.usage.weekly,
+    spend: options.showSpend ? state.usage.spend : undefined,
+  };
   const { session, weekly, spend } = usage;
   const parts: string[] = [];
   if (session) {
@@ -166,7 +184,7 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
   const tooltip = [formatTooltip(usage, now), state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
-  return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage) };
+  return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage, options.thresholds) };
 }
 
 function errorTooltip(state: ViewState, now: number): string | undefined {

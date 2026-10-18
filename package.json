@@ -64,6 +64,31 @@
           ],
           "default": "auto",
           "description": "Monthly spend, for accounts billed by money instead of by usage window."
+        },
+        "claudeUsage.windows": {
+          "type": "string",
+          "enum": ["both", "session", "weekly"],
+          "enumDescriptions": [
+            "Show the 5-hour session and the 7-day window.",
+            "Show only the 5-hour session.",
+            "Show only the 7-day window."
+          ],
+          "default": "both",
+          "description": "Which usage windows the status bar shows."
+        },
+        "claudeUsage.warningThreshold": {
+          "type": "number",
+          "default": 70,
+          "minimum": 1,
+          "maximum": 99,
+          "description": "Percentage from which the status bar turns yellow. Must be lower than the critical threshold."
+        },
+        "claudeUsage.criticalThreshold": {
+          "type": "number",
+          "default": 90,
+          "minimum": 2,
+          "maximum": 100,
+          "description": "Percentage from which the status bar turns red."
         }
       }
     },
