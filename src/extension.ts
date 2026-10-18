@@ -1,8 +1,11 @@
+import { homedir } from 'node:os';
+import { basename, join } from 'node:path';
 import * as vscode from 'vscode';
 import { computeForecasts, Forecasts } from './controller/forecast';
 import { formatSummary, visibleUsage } from './controller/format';
 import { claimCrossing, crossings, pruneMarkers } from './controller/notifier';
 import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
+import { exportFileName, forExport, toCsv, toJson } from './controller/history_export';
 import { HistoryView } from './controller/history_view';
 import { openSettings, showMenu, toggleExtendedView } from './controller/menu';
 import { StatusBar } from './controller/status_bar';
@@ -45,6 +48,31 @@ async function copySummary(state: ViewState): Promise<void> {
   const asOf = state.stale && state.fetchedAt !== undefined ? ` (as of ${new Date(state.fetchedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })})` : '';
   await vscode.env.clipboard.writeText(summary + asOf);
   vscode.window.setStatusBarMessage('Claude Usage: summary copied', 3000);
+}
+
+/** Saves the readings as CSV or JSON, whichever the chosen file name ends with. */
+async function exportHistory(history: History): Promise<void> {
+  const options = readOptions();
+  const samples = forExport(history.read(), options.showSpend);
+  if (!samples.length) {
+    void vscode.window.showInformationMessage('Claude Usage: no history to export yet.');
+    return;
+  }
+  const now = Date.now();
+  const name = `${exportFileName(now)}.csv`;
+  // The workspace folder, not the home folder, so the dialog also opens in a remote window.
+  const folder = vscode.workspace.workspaceFolders?.[0]?.uri;
+  const uri = await vscode.window.showSaveDialog({
+    defaultUri: folder ? vscode.Uri.joinPath(folder, name) : vscode.Uri.file(join(homedir(), name)),
+    filters: { CSV: ['csv'], JSON: ['json'] },
+    title: 'Export Claude Usage history',
+  });
+  if (!uri) {
+    return;
+  }
+  const text = uri.path.toLowerCase().endsWith('.json') ? toJson(samples, now) : toCsv(samples);
+  await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
+  void vscode.window.showInformationMessage(`Claude Usage: exported ${samples.length} readings to ${basename(uri.path)}.`);
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -106,6 +134,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('claudeUsage.showHistory', () => historyView.show()),
     vscode.commands.registerCommand('claudeUsage.showMenu', showMenu),
     vscode.commands.registerCommand('claudeUsage.toggleExtendedView', toggleExtendedView),
+    vscode.commands.registerCommand('claudeUsage.exportHistory', () => exportHistory(history)),
     vscode.commands.registerCommand('claudeUsage.copySummary', () => copySummary(lastState)),
     vscode.commands.registerCommand('claudeUsage.openSettings', openSettings),
     vscode.workspace.onDidChangeConfiguration((e) => {

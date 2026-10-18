@@ -26,6 +26,7 @@ With `claudeUsage.extendedView` enabled:
 - Several VS Code windows share one request through a cache file, and back off on rate limits (HTTP 429). While a refresh is failing, the last good value stays visible marked with `~`.
 - Click the status bar item for a menu: refresh, switch between the compact and the extended view, history, a usage summary to copy, settings. **Claude Usage: Refresh** (`Ctrl+Alt+U`, `Cmd+Alt+U` on macOS) refreshes directly.
 - **Claude Usage: Copy Usage Summary** (also in the menu) puts the usage on the clipboard as one line, for example `Session (5hr) 42% · resets in 2h 10m | Weekly (7 day) 71% · resets in 2d 4h`. It follows `windows` and `showSpend`.
+- **Claude Usage: Export History…** saves the stored readings as CSV or JSON, whichever file name you choose. The spend is left out when `showSpend` is `never`.
 
 ## Settings
 

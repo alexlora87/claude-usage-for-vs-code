@@ -45,6 +45,10 @@
         "title": "Claude Usage: Toggle Extended View"
       },
       {
+        "command": "claudeUsage.exportHistory",
+        "title": "Claude Usage: Export History…"
+      },
+      {
         "command": "claudeUsage.copySummary",
         "title": "Claude Usage: Copy Usage Summary"
       },
