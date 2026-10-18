@@ -69,8 +69,21 @@ describe('session panel', () => {
     expect(html).toContain('2 sessions, 1 at 90% or more');
   });
 
-  it('does not join sessions: a missing session is just a missing bar', () => {
-    expect(renderPanels(samples, now, [...all])).not.toContain('<polyline');
+  it('keeps every bar inside the plot, with some height', () => {
+    const html = renderPanels([...samples, session(now - 8 * DAY + HOUR, 0, now - 8 * DAY + 3 * HOUR), session(now - 7 * DAY - HOUR, 50, now - 7 * DAY + 2 * HOUR)], now, [...all]);
+    const bars = [...html.matchAll(/<rect class="bar[^"]*" x="([\d.]+)" y="[\d.]+" width="([\d.]+)" height="([\d.]+)"/g)];
+    expect(bars.length).toBeGreaterThanOrEqual(3);
+    for (const [, x, width, height] of bars) {
+      expect(Number(x)).toBeGreaterThanOrEqual(40);
+      expect(Number(width)).toBeGreaterThan(0);
+      expect(Number(height)).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('does not duplicate a session when a stale reading comes back to an older reset time', () => {
+    const stale = [...samples.slice(0, 2), samples[2], session(now - 4 * HOUR, 10, firstEnd), samples[3]];
+    expect(renderPanels(stale, now, [...all]).match(/<rect class="bar/g)).toHaveLength(2);
+    expect(cycles(stale, 'session')).toHaveLength(2);
   });
 
   it('says nothing without sessions in the last 7 days', () => {
@@ -80,11 +93,12 @@ describe('session panel', () => {
 
 describe('weekly panel', () => {
   const end = now + 3 * DAY;
-  const hourly = (percentAt: (i: number) => number) => [...Array(8).keys()].map((i) => weekly(now - (7 - i) * HOUR, percentAt(i), end));
+  // A reading every 20 minutes for 7 hours; `percentAt` gets the hours elapsed since the first one.
+  const readings = (percentAt: (hours: number) => number) => [...Array(22).keys()].map((i) => weekly(now - (21 - i) * 20 * MIN, percentAt(i / 3), end));
 
   it('draws the cycle against an even pace and the projected end', () => {
     // 0.25 % per hour, 21.75 % now with 72 h left: on pace to end at ~40 %.
-    const html = renderPanels(hourly((i) => 20 + i * 0.25), now, [...all]);
+    const html = renderPanels(readings((hours) => 20 + hours * 0.25), now, [...all]);
     expect(html).toContain('<polyline class="weekly"');
     expect(html).toContain('<polyline class="pace"');
     expect(html).toContain('<polyline class="projection"');
@@ -92,7 +106,7 @@ describe('weekly panel', () => {
   });
 
   it('says when the window would fill up before the reset', () => {
-    const html = renderPanels(hourly((i) => 20 + i * 5), now, [...all]);
+    const html = renderPanels(readings((hours) => 20 + hours * 5), now, [...all]);
     expect(html).toContain('<polyline class="projection full"');
     expect(html).toContain('it fills up before the reset');
   });
@@ -110,6 +124,32 @@ describe('weekly panel', () => {
     expect(html).toContain('<polyline class="connector"');
   });
 
+  it('shows the last cycle, without a projection, once it has ended', () => {
+    const ended = now - 2 * HOUR;
+    const samples = [weekly(now - 9 * HOUR, 40, ended), weekly(now - 8 * HOUR, 42, ended), weekly(now - 7 * HOUR, 44, ended)];
+    const html = renderPanels(samples, now, [...all]);
+    expect(html).toContain('Last cycle, reset');
+    expect(html).not.toContain('Current cycle');
+    expect(html).not.toContain('on pace');
+    expect(html).not.toContain('<polyline class="projection');
+  });
+
+  it('picks the cycle that resets last, even when a stale reading follows it', () => {
+    const old = now - 2 * DAY;
+    const samples = [weekly(now - 3 * DAY, 90, old), weekly(now - 3 * HOUR, 5, end), weekly(now - 2 * HOUR, 6, old), weekly(now - HOUR, 7, end)];
+    expect(renderPanels(samples, now, ['weekly'])).toContain('Current cycle');
+  });
+
+  it('draws a dot when a run has a single reading', () => {
+    const html = renderPanels([weekly(now - 10 * MIN, 20, end)], now, ['weekly']);
+    expect(html).toContain('<circle class="weekly point"');
+    expect(html).not.toContain('<polyline class="weekly"');
+  });
+
+  it('marks now inside the current cycle', () => {
+    expect(renderPanels([weekly(now - 10 * MIN, 20, end), weekly(now, 21, end)], now, ['weekly'])).toContain('<line class="now"');
+  });
+
   it('says nothing without a weekly cycle', () => {
     expect(renderPanels([session(now, 10, now + HOUR)], now, ['weekly'])).toBe('');
   });
@@ -117,6 +157,10 @@ describe('weekly panel', () => {
 
 describe('spend panel and the allowed panels', () => {
   const samples: Sample[] = [spend(now - 20 * MIN, 100), spend(now - 10 * MIN, 101), session(now - 5 * MIN, 10, now + HOUR), weekly(now - 5 * MIN, 5, now + DAY)];
+
+  it('draws a single spend reading as a dot', () => {
+    expect(renderPanels([spend(now - 5 * MIN, 100)], now, ['spend'])).toContain('<circle class="spend point"');
+  });
 
   it('draws the monthly spend as a line', () => {
     const html = renderPanels(samples, now, ['spend']);

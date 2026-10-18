@@ -28,6 +28,7 @@ circle:hover { fill: currentColor; }
 .weekly { stroke: var(--vscode-charts-orange); color: var(--vscode-charts-orange); }
 .spend { stroke: var(--vscode-charts-green); color: var(--vscode-charts-green); }
 .weekly-dot { color: var(--vscode-charts-orange); }
+.point { fill: currentColor; }
 .spend-dot { color: var(--vscode-charts-green); }
 .connector { stroke: var(--vscode-charts-orange); stroke-dasharray: 2 4; opacity: 0.7; }
 .pace { stroke: var(--vscode-descriptionForeground); stroke-dasharray: 2 5; stroke-width: 1.5; }

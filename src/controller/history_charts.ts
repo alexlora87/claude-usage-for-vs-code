@@ -4,7 +4,7 @@ import { computeForecasts } from './forecast';
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
-export const RANGE_MS = 7 * DAY;
+const RANGE_MS = 7 * DAY;
 /** A line is cut where VS Code was closed for longer than this. */
 const GAP_MS = 30 * MINUTE;
 /** Same cycle when the reset times differ by less than this (the API may jitter). */
@@ -50,9 +50,11 @@ export function cycles(samples: Sample[], key: 'session' | 'weekly'): Cycle[] {
     if (!point || point.resetsAt === undefined) {
       continue;
     }
-    let cycle = result[result.length - 1];
-    if (!cycle || Math.abs(point.resetsAt - cycle.end) > CYCLE_TOLERANCE_MS) {
-      cycle = { start: point.resetsAt - WINDOW_LENGTH[key], end: point.resetsAt, peak: 0, points: [] };
+    const resetsAt = point.resetsAt;
+    // Any earlier cycle matches too: a stale reading must not start a duplicate one.
+    let cycle = result.find((c) => Math.abs(resetsAt - c.end) <= CYCLE_TOLERANCE_MS);
+    if (!cycle) {
+      cycle = { start: resetsAt - WINDOW_LENGTH[key], end: resetsAt, peak: 0, points: [] };
       result.push(cycle);
     }
     cycle.peak = Math.max(cycle.peak, point.percent);
@@ -132,6 +134,12 @@ const polyline = (css: string, points: Array<[number, number]>) =>
 
 const segment = (css: string, from: [number, number], to: [number, number]) => polyline(css, [from, to]);
 
+/** A run of one reading has no line to draw: it is a dot. */
+const lonePoint = (css: string, p: Reading, s: Scale) => `<circle class="${css} point" cx="${f(s.x(p.t))}" cy="${f(s.y(p.percent))}" r="2.5"/>`;
+
+const runShape = (css: string, run: Reading[], s: Scale) =>
+  run.length === 1 ? lonePoint(css, run[0], s) : polyline(css, run.map((p) => [s.x(p.t), s.y(p.percent)]));
+
 /** Invisible circles that show a tooltip on hover, one per half hour and always the last of a run. */
 function hoverDots(css: string, run: Reading[], s: Scale, label: string): string {
   let lastHover = -Infinity;
@@ -151,14 +159,18 @@ function panel(title: string, note: string, svg: string, legend: string): string
 
 /** The current weekly cycle against an even pace, with where it is on pace to end. */
 function weeklyPanel(samples: Sample[], now: number): string {
-  const all = cycles(samples, 'weekly');
-  const cycle = all[all.length - 1];
+  const cycle = cycles(samples, 'weekly').reduce<Cycle | undefined>((latest, c) => (!latest || c.end > latest.end ? c : latest), undefined);
   if (!cycle || cycle.end < now - RANGE_MS) {
     return '';
   }
+  // A stale reading may carry a time after the reset: it is outside the chart.
+  const points = cycle.points.filter((p) => p.t <= cycle.end);
+  if (!points.length) {
+    return '';
+  }
   const s = scale(cycle.start, cycle.end);
-  const last = cycle.points[cycle.points.length - 1];
-  const runs = runsOf(cycle.points);
+  const last = points[points.length - 1];
+  const runs = runsOf(points);
 
   let drawn = '';
   runs.forEach((run, i) => {
@@ -166,18 +178,20 @@ function weeklyPanel(samples: Sample[], now: number): string {
       const previous = runs[i - 1][runs[i - 1].length - 1];
       drawn += segment('connector', [s.x(previous.t), s.y(previous.percent)], [s.x(run[0].t), s.y(run[0].percent)]);
     }
-    drawn += polyline('weekly', run.map((p) => [s.x(p.t), s.y(p.percent)]));
+    drawn += runShape('weekly', run, s);
     drawn += hoverDots('weekly', run, s, 'Weekly (7 day)');
   });
 
   let projection = '';
-  let note = `Current cycle, resets ${formatTime(cycle.end)}`;
-  const forecast = last.t < cycle.end ? computeForecasts(samples, { weekly: { percent: last.percent, resetsAt: new Date(cycle.end) } }, last.t).weekly : undefined;
+  // Once the cycle is over there is no pace to project: it is the last one that was read.
+  const ended = cycle.end <= now;
+  let note = `${ended ? 'Last cycle, reset' : 'Current cycle, resets'} ${formatTime(cycle.end)}`;
+  const forecast = !ended ? computeForecasts(samples, { weekly: { percent: last.percent, resetsAt: new Date(cycle.end) } }, last.t).weekly : undefined;
   if (forecast && 'endPercent' in forecast) {
     projection = segment('projection', [s.x(last.t), s.y(last.percent)], [s.x(cycle.end), s.y(forecast.endPercent)]);
     note += ` · on pace to end at ~${Math.min(99, Math.round(forecast.endPercent))}%`;
   } else if (forecast) {
-    projection = segment('projection full', [s.x(last.t), s.y(last.percent)], [s.x(Math.min(forecast.fullAt, cycle.end)), s.y(100)]);
+    projection = segment('projection full', [s.x(last.t), s.y(last.percent)], [s.x(forecast.fullAt), s.y(100)]);
     note += ' · at this pace it fills up before the reset';
   }
 
@@ -199,9 +213,10 @@ function sessionPanel(samples: Sample[], now: number): string {
     .map((c) => {
       const x0 = s.x(Math.max(c.start, start)) + 1;
       const x1 = s.x(Math.min(c.end, now)) - 1;
-      const top = s.y(c.peak);
+      // At least 2 px, so a session that stayed at 0 % is still a bar with its tooltip.
+      const height = Math.max(s.y(0) - s.y(c.peak), 2);
       const text = c.end > now ? `Session in progress · ${Math.round(c.peak)}% so far` : `Session that ended ${formatTime(c.end)} · peak ${Math.round(c.peak)}%`;
-      return `<rect class="bar${c.peak >= HOT_AT ? ' hot' : ''}" x="${f(x0)}" y="${f(top)}" width="${f(Math.max(x1 - x0, 2))}" height="${f(s.y(0) - top)}" rx="2"><title>${escapeHtml(text)}</title></rect>`;
+      return `<rect class="bar${c.peak >= HOT_AT ? ' hot' : ''}" x="${f(x0)}" y="${f(s.y(0) - height)}" width="${f(Math.max(x1 - x0, 2))}" height="${f(height)}" rx="2"><title>${escapeHtml(text)}</title></rect>`;
     })
     .join('');
   const full = sessions.filter((c) => c.peak >= HOT_AT).length;
@@ -217,7 +232,7 @@ function spendPanel(samples: Sample[], now: number): string {
   }
   const start = now - RANGE_MS;
   const s = scale(start, now);
-  const lines = runs.map((run) => polyline('spend', run.map((p) => [s.x(p.t), s.y(p.percent)])) + hoverDots('spend', run, s, 'Monthly Credits')).join('');
+  const lines = runs.map((run) => runShape('spend', run, s) + hoverDots('spend', run, s, 'Monthly Credits')).join('');
   return panel('Monthly Credits', 'Last 7 days', axes(s, start, now) + lines, '<span class="swatch spend-bg"></span>Share of the monthly limit');
 }
 
