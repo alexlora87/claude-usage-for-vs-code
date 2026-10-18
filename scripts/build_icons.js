@@ -6,7 +6,7 @@ const path = require('node:path');
 const svg2ttf = require('svg2ttf');
 const ttf2woff = require('ttf2woff');
 
-const FONT_VERSION = 'v5';
+const FONT_VERSION = 'v6';
 const STEPS = 21;
 const FIRST_CODEPOINT = 0xe000;
 const CENTER = { x: 500, y: 380 };
@@ -15,7 +15,7 @@ const FILL = { pie: [0, 290], ring: [200, 290] };
 // The bar is a wide glyph: a rounded track (same 50-unit outline as the ring) with a solid
 // fill inside, separated from it by a gap so 5% stays visible. Three track widths.
 const BAR = { x: 100, top: 590, bottom: 170, outline: 50, gap: 60 };
-const BAR_WIDTHS = { small: 1800, medium: 2400, big: 3000 };
+const BAR_WIDTHS = { small: 1800, medium: 2400, large: 3000 };
 const DEFAULT_ADVANCE = 1000;
 
 const point = (r, deg) => {

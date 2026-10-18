@@ -60,59 +60,15 @@
       "title": "Claude Usage",
       "properties": {
         "claudeUsage.refreshInterval": {
+          "order": 1,
           "type": "number",
           "default": 120,
           "minimum": 30,
           "maximum": 3600,
           "description": "Seconds between usage requests."
         },
-        "claudeUsage.extendedView": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show full labels (Session (5hr), Weekly (7 day), Resets in) in the status bar."
-        },
-        "claudeUsage.indicator": {
-          "type": "string",
-          "enum": [
-            "ring",
-            "bar"
-          ],
-          "enumDescriptions": [
-            "A ring that fills up next to each percentage.",
-            "A progress bar next to each percentage."
-          ],
-          "default": "ring",
-          "description": "How the status bar draws the usage next to the percentage."
-        },
-        "claudeUsage.barSize": {
-          "type": "string",
-          "enum": [
-            "small",
-            "medium",
-            "big"
-          ],
-          "enumDescriptions": [
-            "A short bar.",
-            "A longer bar.",
-            "The longest bar."
-          ],
-          "default": "small",
-          "description": "Length of the progress bar. Only used when the indicator is bar."
-        },
-        "claudeUsage.showSpend": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "never"
-          ],
-          "enumDescriptions": [
-            "Show the monthly spend when the account has extra usage enabled with a limit.",
-            "Never show the monthly spend."
-          ],
-          "default": "auto",
-          "description": "Monthly spend, for accounts billed by money instead of by usage window."
-        },
         "claudeUsage.windows": {
+          "order": 2,
           "type": "string",
           "enum": [
             "both",
@@ -127,12 +83,64 @@
           "default": "both",
           "description": "Which usage windows the status bar, the notifications and the history show."
         },
+        "claudeUsage.extendedView": {
+          "order": 3,
+          "type": "boolean",
+          "default": false,
+          "description": "Show full labels (Session (5hr), Weekly (7 day), Resets in) in the status bar."
+        },
+        "claudeUsage.indicator": {
+          "order": 4,
+          "type": "string",
+          "enum": [
+            "ring",
+            "bar"
+          ],
+          "enumDescriptions": [
+            "A ring that fills up next to each percentage.",
+            "A progress bar next to each percentage."
+          ],
+          "default": "ring",
+          "description": "How the status bar draws the usage next to the percentage."
+        },
+        "claudeUsage.barSize": {
+          "order": 5,
+          "type": "string",
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "enumDescriptions": [
+            "A short bar.",
+            "A longer bar.",
+            "The longest bar."
+          ],
+          "default": "small",
+          "description": "Length of the progress bar. Only used when the indicator is bar."
+        },
+        "claudeUsage.showSpend": {
+          "order": 6,
+          "type": "string",
+          "enum": [
+            "auto",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Show the monthly spend when the account has extra usage enabled with a limit.",
+            "Never show the monthly spend."
+          ],
+          "default": "auto",
+          "description": "Monthly spend, for accounts billed by money instead of by usage window."
+        },
         "claudeUsage.notifications": {
+          "order": 7,
           "type": "boolean",
           "default": true,
           "description": "Show a notification once per window cycle when usage reaches the warning or the critical threshold."
         },
         "claudeUsage.warningThreshold": {
+          "order": 8,
           "type": "number",
           "default": 70,
           "minimum": 1,
@@ -140,6 +148,7 @@
           "description": "Percentage from which the status bar turns yellow. Must be lower than the critical threshold."
         },
         "claudeUsage.criticalThreshold": {
+          "order": 9,
           "type": "number",
           "default": 90,
           "minimum": 2,
@@ -152,735 +161,735 @@
       "claude-usage-ring-00": {
         "description": "Usage indicator ring-00%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E000"
         }
       },
       "claude-usage-ring-05": {
         "description": "Usage indicator ring-05%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E001"
         }
       },
       "claude-usage-ring-10": {
         "description": "Usage indicator ring-10%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E002"
         }
       },
       "claude-usage-ring-15": {
         "description": "Usage indicator ring-15%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E003"
         }
       },
       "claude-usage-ring-20": {
         "description": "Usage indicator ring-20%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E004"
         }
       },
       "claude-usage-ring-25": {
         "description": "Usage indicator ring-25%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E005"
         }
       },
       "claude-usage-ring-30": {
         "description": "Usage indicator ring-30%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E006"
         }
       },
       "claude-usage-ring-35": {
         "description": "Usage indicator ring-35%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E007"
         }
       },
       "claude-usage-ring-40": {
         "description": "Usage indicator ring-40%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E008"
         }
       },
       "claude-usage-ring-45": {
         "description": "Usage indicator ring-45%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E009"
         }
       },
       "claude-usage-ring-50": {
         "description": "Usage indicator ring-50%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E00A"
         }
       },
       "claude-usage-ring-55": {
         "description": "Usage indicator ring-55%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E00B"
         }
       },
       "claude-usage-ring-60": {
         "description": "Usage indicator ring-60%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E00C"
         }
       },
       "claude-usage-ring-65": {
         "description": "Usage indicator ring-65%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E00D"
         }
       },
       "claude-usage-ring-70": {
         "description": "Usage indicator ring-70%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E00E"
         }
       },
       "claude-usage-ring-75": {
         "description": "Usage indicator ring-75%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E00F"
         }
       },
       "claude-usage-ring-80": {
         "description": "Usage indicator ring-80%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E010"
         }
       },
       "claude-usage-ring-85": {
         "description": "Usage indicator ring-85%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E011"
         }
       },
       "claude-usage-ring-90": {
         "description": "Usage indicator ring-90%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E012"
         }
       },
       "claude-usage-ring-95": {
         "description": "Usage indicator ring-95%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E013"
         }
       },
       "claude-usage-ring-100": {
         "description": "Usage indicator ring-100%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E014"
         }
       },
       "claude-usage-pie-00": {
         "description": "Usage indicator pie-00%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E015"
         }
       },
       "claude-usage-pie-05": {
         "description": "Usage indicator pie-05%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E016"
         }
       },
       "claude-usage-pie-10": {
         "description": "Usage indicator pie-10%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E017"
         }
       },
       "claude-usage-pie-15": {
         "description": "Usage indicator pie-15%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E018"
         }
       },
       "claude-usage-pie-20": {
         "description": "Usage indicator pie-20%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E019"
         }
       },
       "claude-usage-pie-25": {
         "description": "Usage indicator pie-25%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E01A"
         }
       },
       "claude-usage-pie-30": {
         "description": "Usage indicator pie-30%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E01B"
         }
       },
       "claude-usage-pie-35": {
         "description": "Usage indicator pie-35%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E01C"
         }
       },
       "claude-usage-pie-40": {
         "description": "Usage indicator pie-40%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E01D"
         }
       },
       "claude-usage-pie-45": {
         "description": "Usage indicator pie-45%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E01E"
         }
       },
       "claude-usage-pie-50": {
         "description": "Usage indicator pie-50%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E01F"
         }
       },
       "claude-usage-pie-55": {
         "description": "Usage indicator pie-55%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E020"
         }
       },
       "claude-usage-pie-60": {
         "description": "Usage indicator pie-60%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E021"
         }
       },
       "claude-usage-pie-65": {
         "description": "Usage indicator pie-65%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E022"
         }
       },
       "claude-usage-pie-70": {
         "description": "Usage indicator pie-70%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E023"
         }
       },
       "claude-usage-pie-75": {
         "description": "Usage indicator pie-75%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E024"
         }
       },
       "claude-usage-pie-80": {
         "description": "Usage indicator pie-80%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E025"
         }
       },
       "claude-usage-pie-85": {
         "description": "Usage indicator pie-85%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E026"
         }
       },
       "claude-usage-pie-90": {
         "description": "Usage indicator pie-90%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E027"
         }
       },
       "claude-usage-pie-95": {
         "description": "Usage indicator pie-95%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E028"
         }
       },
       "claude-usage-pie-100": {
         "description": "Usage indicator pie-100%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E029"
         }
       },
       "claude-usage-bar-small-00": {
         "description": "Usage indicator bar-small-00%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E02A"
         }
       },
       "claude-usage-bar-small-05": {
         "description": "Usage indicator bar-small-05%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E02B"
         }
       },
       "claude-usage-bar-small-10": {
         "description": "Usage indicator bar-small-10%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E02C"
         }
       },
       "claude-usage-bar-small-15": {
         "description": "Usage indicator bar-small-15%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E02D"
         }
       },
       "claude-usage-bar-small-20": {
         "description": "Usage indicator bar-small-20%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E02E"
         }
       },
       "claude-usage-bar-small-25": {
         "description": "Usage indicator bar-small-25%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E02F"
         }
       },
       "claude-usage-bar-small-30": {
         "description": "Usage indicator bar-small-30%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E030"
         }
       },
       "claude-usage-bar-small-35": {
         "description": "Usage indicator bar-small-35%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E031"
         }
       },
       "claude-usage-bar-small-40": {
         "description": "Usage indicator bar-small-40%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E032"
         }
       },
       "claude-usage-bar-small-45": {
         "description": "Usage indicator bar-small-45%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E033"
         }
       },
       "claude-usage-bar-small-50": {
         "description": "Usage indicator bar-small-50%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E034"
         }
       },
       "claude-usage-bar-small-55": {
         "description": "Usage indicator bar-small-55%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E035"
         }
       },
       "claude-usage-bar-small-60": {
         "description": "Usage indicator bar-small-60%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E036"
         }
       },
       "claude-usage-bar-small-65": {
         "description": "Usage indicator bar-small-65%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E037"
         }
       },
       "claude-usage-bar-small-70": {
         "description": "Usage indicator bar-small-70%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E038"
         }
       },
       "claude-usage-bar-small-75": {
         "description": "Usage indicator bar-small-75%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E039"
         }
       },
       "claude-usage-bar-small-80": {
         "description": "Usage indicator bar-small-80%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E03A"
         }
       },
       "claude-usage-bar-small-85": {
         "description": "Usage indicator bar-small-85%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E03B"
         }
       },
       "claude-usage-bar-small-90": {
         "description": "Usage indicator bar-small-90%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E03C"
         }
       },
       "claude-usage-bar-small-95": {
         "description": "Usage indicator bar-small-95%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E03D"
         }
       },
       "claude-usage-bar-small-100": {
         "description": "Usage indicator bar-small-100%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E03E"
         }
       },
       "claude-usage-bar-medium-00": {
         "description": "Usage indicator bar-medium-00%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E03F"
         }
       },
       "claude-usage-bar-medium-05": {
         "description": "Usage indicator bar-medium-05%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E040"
         }
       },
       "claude-usage-bar-medium-10": {
         "description": "Usage indicator bar-medium-10%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E041"
         }
       },
       "claude-usage-bar-medium-15": {
         "description": "Usage indicator bar-medium-15%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E042"
         }
       },
       "claude-usage-bar-medium-20": {
         "description": "Usage indicator bar-medium-20%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E043"
         }
       },
       "claude-usage-bar-medium-25": {
         "description": "Usage indicator bar-medium-25%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E044"
         }
       },
       "claude-usage-bar-medium-30": {
         "description": "Usage indicator bar-medium-30%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E045"
         }
       },
       "claude-usage-bar-medium-35": {
         "description": "Usage indicator bar-medium-35%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E046"
         }
       },
       "claude-usage-bar-medium-40": {
         "description": "Usage indicator bar-medium-40%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E047"
         }
       },
       "claude-usage-bar-medium-45": {
         "description": "Usage indicator bar-medium-45%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E048"
         }
       },
       "claude-usage-bar-medium-50": {
         "description": "Usage indicator bar-medium-50%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E049"
         }
       },
       "claude-usage-bar-medium-55": {
         "description": "Usage indicator bar-medium-55%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E04A"
         }
       },
       "claude-usage-bar-medium-60": {
         "description": "Usage indicator bar-medium-60%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E04B"
         }
       },
       "claude-usage-bar-medium-65": {
         "description": "Usage indicator bar-medium-65%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E04C"
         }
       },
       "claude-usage-bar-medium-70": {
         "description": "Usage indicator bar-medium-70%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E04D"
         }
       },
       "claude-usage-bar-medium-75": {
         "description": "Usage indicator bar-medium-75%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E04E"
         }
       },
       "claude-usage-bar-medium-80": {
         "description": "Usage indicator bar-medium-80%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E04F"
         }
       },
       "claude-usage-bar-medium-85": {
         "description": "Usage indicator bar-medium-85%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E050"
         }
       },
       "claude-usage-bar-medium-90": {
         "description": "Usage indicator bar-medium-90%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E051"
         }
       },
       "claude-usage-bar-medium-95": {
         "description": "Usage indicator bar-medium-95%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E052"
         }
       },
       "claude-usage-bar-medium-100": {
         "description": "Usage indicator bar-medium-100%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E053"
         }
       },
-      "claude-usage-bar-big-00": {
-        "description": "Usage indicator bar-big-00%",
+      "claude-usage-bar-large-00": {
+        "description": "Usage indicator bar-large-00%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E054"
         }
       },
-      "claude-usage-bar-big-05": {
-        "description": "Usage indicator bar-big-05%",
+      "claude-usage-bar-large-05": {
+        "description": "Usage indicator bar-large-05%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E055"
         }
       },
-      "claude-usage-bar-big-10": {
-        "description": "Usage indicator bar-big-10%",
+      "claude-usage-bar-large-10": {
+        "description": "Usage indicator bar-large-10%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E056"
         }
       },
-      "claude-usage-bar-big-15": {
-        "description": "Usage indicator bar-big-15%",
+      "claude-usage-bar-large-15": {
+        "description": "Usage indicator bar-large-15%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E057"
         }
       },
-      "claude-usage-bar-big-20": {
-        "description": "Usage indicator bar-big-20%",
+      "claude-usage-bar-large-20": {
+        "description": "Usage indicator bar-large-20%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E058"
         }
       },
-      "claude-usage-bar-big-25": {
-        "description": "Usage indicator bar-big-25%",
+      "claude-usage-bar-large-25": {
+        "description": "Usage indicator bar-large-25%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E059"
         }
       },
-      "claude-usage-bar-big-30": {
-        "description": "Usage indicator bar-big-30%",
+      "claude-usage-bar-large-30": {
+        "description": "Usage indicator bar-large-30%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E05A"
         }
       },
-      "claude-usage-bar-big-35": {
-        "description": "Usage indicator bar-big-35%",
+      "claude-usage-bar-large-35": {
+        "description": "Usage indicator bar-large-35%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E05B"
         }
       },
-      "claude-usage-bar-big-40": {
-        "description": "Usage indicator bar-big-40%",
+      "claude-usage-bar-large-40": {
+        "description": "Usage indicator bar-large-40%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E05C"
         }
       },
-      "claude-usage-bar-big-45": {
-        "description": "Usage indicator bar-big-45%",
+      "claude-usage-bar-large-45": {
+        "description": "Usage indicator bar-large-45%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E05D"
         }
       },
-      "claude-usage-bar-big-50": {
-        "description": "Usage indicator bar-big-50%",
+      "claude-usage-bar-large-50": {
+        "description": "Usage indicator bar-large-50%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E05E"
         }
       },
-      "claude-usage-bar-big-55": {
-        "description": "Usage indicator bar-big-55%",
+      "claude-usage-bar-large-55": {
+        "description": "Usage indicator bar-large-55%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E05F"
         }
       },
-      "claude-usage-bar-big-60": {
-        "description": "Usage indicator bar-big-60%",
+      "claude-usage-bar-large-60": {
+        "description": "Usage indicator bar-large-60%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E060"
         }
       },
-      "claude-usage-bar-big-65": {
-        "description": "Usage indicator bar-big-65%",
+      "claude-usage-bar-large-65": {
+        "description": "Usage indicator bar-large-65%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E061"
         }
       },
-      "claude-usage-bar-big-70": {
-        "description": "Usage indicator bar-big-70%",
+      "claude-usage-bar-large-70": {
+        "description": "Usage indicator bar-large-70%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E062"
         }
       },
-      "claude-usage-bar-big-75": {
-        "description": "Usage indicator bar-big-75%",
+      "claude-usage-bar-large-75": {
+        "description": "Usage indicator bar-large-75%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E063"
         }
       },
-      "claude-usage-bar-big-80": {
-        "description": "Usage indicator bar-big-80%",
+      "claude-usage-bar-large-80": {
+        "description": "Usage indicator bar-large-80%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E064"
         }
       },
-      "claude-usage-bar-big-85": {
-        "description": "Usage indicator bar-big-85%",
+      "claude-usage-bar-large-85": {
+        "description": "Usage indicator bar-large-85%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E065"
         }
       },
-      "claude-usage-bar-big-90": {
-        "description": "Usage indicator bar-big-90%",
+      "claude-usage-bar-large-90": {
+        "description": "Usage indicator bar-large-90%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E066"
         }
       },
-      "claude-usage-bar-big-95": {
-        "description": "Usage indicator bar-big-95%",
+      "claude-usage-bar-large-95": {
+        "description": "Usage indicator bar-large-95%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E067"
         }
       },
-      "claude-usage-bar-big-100": {
-        "description": "Usage indicator bar-big-100%",
+      "claude-usage-bar-large-100": {
+        "description": "Usage indicator bar-large-100%",
         "default": {
-          "fontPath": "./resources/claude-usage-icons-v5.woff",
+          "fontPath": "./resources/claude-usage-icons-v6.woff",
           "fontCharacter": "\\E068"
         }
       }

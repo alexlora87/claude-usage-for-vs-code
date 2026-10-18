@@ -1,9 +1,9 @@
 const STEP = 5;
 
 /** Glyph set of the icon font: the ring, or the progress bar in one of its three lengths. */
-export type IconStyle = 'ring' | 'bar-small' | 'bar-medium' | 'bar-big';
+export type IconStyle = 'ring' | 'bar-small' | 'bar-medium' | 'bar-large';
 
-const BAR_STYLES: IconStyle[] = ['bar-small', 'bar-medium', 'bar-big'];
+const BAR_STYLES: IconStyle[] = ['bar-small', 'bar-medium', 'bar-large'];
 
 /** The style the settings ask for: the bar size only counts with the bar, and unknown values fall back to the defaults. */
 export function iconStyleFrom(indicator: string, barSize: string): IconStyle {
