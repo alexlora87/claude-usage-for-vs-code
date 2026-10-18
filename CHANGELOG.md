@@ -8,7 +8,7 @@
 
 ### Changed
 
-- The projection is also shown when usage is idle (it keeps the current percent), where it used to show nothing. It still needs 3 readings spanning 20 minutes (session) or 6 hours (weekly), and is hidden in the last 10 minutes before the reset.
+- The projection is also shown when usage is idle (it keeps the current percent), where it used to show nothing. It still needs 3 readings spanning 20 minutes (session) or 6 hours (weekly), and the end percent is hidden in the last 10 minutes before the reset.
 
 ## 1.1.0
 

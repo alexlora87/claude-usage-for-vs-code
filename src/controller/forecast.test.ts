@@ -49,6 +49,11 @@ describe('session forecast', () => {
     expect(endPercent(session)).toBe(40);
   });
 
+  it('says nothing when usage is idle but the readings span too little', () => {
+    const brief = [0, 1, 2].map((i) => windowSample(now - 10 * MIN + i * 4 * MIN, 40));
+    expect(computeForecasts(brief, usageAt(40), now).session).toBeUndefined();
+  });
+
   it('keeps the current percent when usage falls slightly', () => {
     const falling = [0, 1, 2, 3].map((i) => windowSample(now - 40 * MIN + i * 10 * MIN, 44 - i));
     expect(endPercent(computeForecasts(falling, usageAt(40), now).session)).toBe(40);
@@ -59,7 +64,8 @@ describe('session forecast', () => {
     const { session } = computeForecasts([...previous, ...steady], usageAt(45), now);
     expect(Math.round((fullAt(session)! - now) / MIN)).toBe(110);
     const afterDrop = [windowSample(now - 50 * MIN, 90), ...steady.slice(1).map((s) => ({ ...s }))];
-    expect(computeForecasts(afterDrop, usageAt(45), now).session).toBeDefined();
+    // Only the readings after the drop count: 0.5 %/min from 20 %, so 110 min to fill up.
+    expect(Math.round((fullAt(computeForecasts(afterDrop, usageAt(45), now).session)! - now) / MIN)).toBe(110);
   });
 
   it('tolerates small differences in the reset time of the same cycle', () => {

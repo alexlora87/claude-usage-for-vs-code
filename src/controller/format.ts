@@ -99,7 +99,6 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
-/** `At this pace` line for a window that would fill up before it resets. */
 /** Below this time left, where a window ends up is no longer news. */
 const MIN_LEFT_MS = 10 * MINUTE;
 

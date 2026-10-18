@@ -102,7 +102,7 @@ describe('reset time', () => {
     );
   });
 
-  it('adds the pace lines only when a window would fill up before it resets', () => {
+  it('adds the fill-up line only while the window is ahead of its reset', () => {
     const reset = new Date(2026, 9, 16, 18, 45);
     const usage = { session: { percent: 50, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } };
     const tooltip = formatTooltip(usage, now, { session: { fullAt: now + 80 * MIN }, weekly: { fullAt: now - 1 } });
