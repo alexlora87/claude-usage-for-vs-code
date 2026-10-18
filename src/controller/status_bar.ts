@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { ViewState } from '../engine/scheduler';
 import { Forecasts } from './forecast';
-import { buildView, Level, thresholdsFrom, ViewOptions, WindowsOption } from './format';
+import { buildView, Level } from './format';
 import { iconFor } from './icons';
+import { readOptions } from './settings';
 
 const BACKGROUNDS: Record<Level, vscode.ThemeColor | undefined> = {
   ok: undefined,
@@ -29,15 +30,7 @@ export class StatusBar implements vscode.Disposable {
 
   /** Re-renders with the last state, e.g. after the extendedView setting changes. */
   render(): void {
-    const config = vscode.workspace.getConfiguration('claudeUsage');
-    const options: ViewOptions = {
-      extended: config.get<boolean>('extendedView', false),
-      showSpend: config.get<string>('showSpend', 'auto') !== 'never',
-      windows: config.get<WindowsOption>('windows', 'both'),
-      thresholds: thresholdsFrom(config.get<number>('warningThreshold', 70), config.get<number>('criticalThreshold', 90)),
-      forecasts: this.forecasts,
-    };
-    const view = buildView(this.state, options, iconFor, Date.now());
+    const view = buildView(this.state, readOptions(this.forecasts), iconFor, Date.now());
     this.item.text = view.text;
     this.item.tooltip = view.tooltip ? new vscode.MarkdownString(view.tooltip) : undefined;
     this.item.backgroundColor = BACKGROUNDS[view.level];

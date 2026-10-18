@@ -1,11 +1,15 @@
 import * as vscode from 'vscode';
 import { computeForecasts, Forecasts } from './controller/forecast';
+import { visibleUsage } from './controller/format';
+import { claim, crossings, markerName, pruneMarkers } from './controller/notifier';
+import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
 import { StatusBar } from './controller/status_bar';
 import { configDir, readAccessToken } from './engine/credentials';
 import { UsageScheduler } from './engine/scheduler';
 import { History, historyFile } from './engine/history';
-import { cacheFile, SharedCache } from './engine/shared_cache';
+import { accountId, cacheFile, SharedCache } from './engine/shared_cache';
 import { fetchUsage } from './engine/usage_api';
+import { Usage } from './shared/types';
 
 /** Windows poll the shared cache this often; network requests are still limited by refreshInterval. */
 const POLL_MS = 10_000;
@@ -15,7 +19,24 @@ function refreshIntervalMs(): number {
   return Math.min(3600, Math.max(30, seconds)) * 1000;
 }
 
+/** Tells once per window cycle and level; windows of VS Code share the markers, so only one of them shows it. */
+function notify(storageDir: string, account: string, usage: Usage, now: number): void {
+  if (!notificationsEnabled()) {
+    return;
+  }
+  const options = readOptions();
+  for (const crossing of crossings(visibleUsage(usage, options), options.thresholds, now)) {
+    if (claim(storageDir, markerName(account, crossing))) {
+      const show = crossing.level === 'critical' ? vscode.window.showErrorMessage : vscode.window.showWarningMessage;
+      void show(`Claude Usage: ${crossing.message}`);
+    }
+  }
+}
+
 export function activate(context: vscode.ExtensionContext): void {
+  const storageDir = context.globalStorageUri.fsPath;
+  const account = accountId(configDir());
+  pruneMarkers(storageDir, Date.now());
   const statusBar = new StatusBar();
   const cache = new SharedCache(cacheFile(context.globalStorageUri.fsPath, configDir()));
   const history = new History(historyFile(context.globalStorageUri.fsPath, configDir()));
@@ -42,6 +63,7 @@ export function activate(context: vscode.ExtensionContext): void {
         recordedAt = state.fetchedAt;
         history.record(state.usage, state.fetchedAt);
         forecasts = computeForecasts(history.read(), state.usage, state.fetchedAt);
+        notify(storageDir, account, state.usage, Date.now());
       }
       statusBar.update(state, forecasts);
     } finally {
@@ -57,7 +79,7 @@ export function activate(context: vscode.ExtensionContext): void {
     { dispose: () => clearInterval(timer) },
     vscode.commands.registerCommand('claudeUsage.refresh', () => tick(true)),
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (['extendedView', 'showSpend', 'windows', 'warningThreshold', 'criticalThreshold'].some((key) => e.affectsConfiguration(`claudeUsage.${key}`))) {
+      if (SETTINGS_KEYS.some((key) => e.affectsConfiguration(`claudeUsage.${key}`))) {
         statusBar.render();
       }
     }),

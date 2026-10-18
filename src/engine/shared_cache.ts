@@ -30,10 +30,14 @@ function reviveWindow(raw?: RawWindow) {
   return raw ? { percent: raw.percent, resetsAt: raw.resetsAt ? new Date(raw.resetsAt) : undefined } : undefined;
 }
 
+/** Short stable id of an account, from its Claude config directory. */
+export function accountId(configDir: string): string {
+  return createHash('sha256').update(configDir).digest('hex').slice(0, 12);
+}
+
 /** One cache file per account, so different CLAUDE_CONFIG_DIRs never mix. */
 export function cacheFile(storageDir: string, configDir: string): string {
-  const id = createHash('sha256').update(configDir).digest('hex').slice(0, 12);
-  return join(storageDir, `cache-${id}.json`);
+  return join(storageDir, `cache-${accountId(configDir)}.json`);
 }
 
 /**

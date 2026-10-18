@@ -76,6 +76,11 @@
           "default": "both",
           "description": "Which usage windows the status bar shows."
         },
+        "claudeUsage.notifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a notification once per window cycle when usage reaches the warning or the critical threshold."
+        },
         "claudeUsage.warningThreshold": {
           "type": "number",
           "default": 70,

@@ -1,7 +1,8 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Usage } from '../shared/types';
+import { accountId } from './shared_cache';
 
 const MINUTE = 60_000;
 /** Samples closer than this to the previous one are skipped. */
@@ -70,8 +71,7 @@ export function appendSample(samples: Sample[], usage: Usage, t: number): Sample
 
 /** One history file per account, next to the shared cache. */
 export function historyFile(storageDir: string, configDir: string): string {
-  const id = createHash('sha256').update(configDir).digest('hex').slice(0, 12);
-  return join(storageDir, `history-${id}.json`);
+  return join(storageDir, `history-${accountId(configDir)}.json`);
 }
 
 /** Usage readings kept locally for the projection and the history panel. */

@@ -154,6 +154,15 @@ export interface ViewOptions {
   forecasts?: Forecasts;
 }
 
+/** The usage the settings let the user see: selected windows, and the spend unless hidden. */
+export function visibleUsage(usage: Usage, options: Pick<ViewOptions, 'windows' | 'showSpend'>): Usage {
+  return {
+    session: options.windows === 'weekly' ? undefined : usage.session,
+    weekly: options.windows === 'session' ? undefined : usage.weekly,
+    spend: options.showSpend ? usage.spend : undefined,
+  };
+}
+
 /** Builds everything the status bar shows from the current state. */
 export function buildView(state: ViewState, options: ViewOptions, icon: (percent: number) => string, now: number): StatusView {
   const { extended } = options;
@@ -164,11 +173,7 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
     return { text: `${PREFIX}: loading…`, level: 'ok' };
   }
 
-  const usage: Usage = {
-    session: options.windows === 'weekly' ? undefined : state.usage.session,
-    weekly: options.windows === 'session' ? undefined : state.usage.weekly,
-    spend: options.showSpend ? state.usage.spend : undefined,
-  };
+  const usage = visibleUsage(state.usage, options);
   const { session, weekly, spend } = usage;
   const parts: string[] = [];
   if (session) {
