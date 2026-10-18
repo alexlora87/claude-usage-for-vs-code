@@ -42,10 +42,12 @@ describe('reviveSamples', () => {
       { t: 'x', session: { percent: 5 } },
       null,
       { t: 2, session: { percent: 'a' }, spend: { percent: 1, used: 1 } },
+      { t: 3, spend: { percent: 1, used: 8, limit: 800 } },
     ];
     expect(reviveSamples(raw)).toEqual([
       { t: 1, session: { percent: 5, resetsAt: 9 }, weekly: undefined, spend: undefined },
       { t: 2, session: undefined, weekly: undefined, spend: undefined },
+      { t: 3, session: undefined, weekly: undefined, spend: { percent: 1, used: 8, limit: 800 } },
     ]);
     expect(reviveSamples('nope')).toEqual([]);
   });

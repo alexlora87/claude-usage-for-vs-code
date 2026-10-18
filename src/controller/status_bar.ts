@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ViewState } from '../engine/scheduler';
+import { Forecasts } from './forecast';
 import { buildView, Level, thresholdsFrom, ViewOptions, WindowsOption } from './format';
 import { iconFor } from './icons';
 
@@ -12,6 +13,7 @@ const BACKGROUNDS: Record<Level, vscode.ThemeColor | undefined> = {
 export class StatusBar implements vscode.Disposable {
   private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   private state: ViewState = { stale: false, loading: true };
+  private forecasts: Forecasts = {};
 
   constructor() {
     this.item.command = 'claudeUsage.refresh';
@@ -19,8 +21,9 @@ export class StatusBar implements vscode.Disposable {
     this.item.show();
   }
 
-  update(state: ViewState): void {
+  update(state: ViewState, forecasts: Forecasts): void {
     this.state = state;
+    this.forecasts = forecasts;
     this.render();
   }
 
@@ -32,6 +35,7 @@ export class StatusBar implements vscode.Disposable {
       showSpend: config.get<string>('showSpend', 'auto') !== 'never',
       windows: config.get<WindowsOption>('windows', 'both'),
       thresholds: thresholdsFrom(config.get<number>('warningThreshold', 70), config.get<number>('criticalThreshold', 90)),
+      forecasts: this.forecasts,
     };
     const view = buildView(this.state, options, iconFor, Date.now());
     this.item.text = view.text;

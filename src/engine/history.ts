@@ -20,7 +20,7 @@ export interface Sample {
   session?: Point;
   weekly?: Point;
   /** Monthly spend: percent of the limit, with the amounts for the projection. */
-  spend?: Point & { used: number; limit: number };
+  spend?: { percent: number; used: number; limit: number };
 }
 
 const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
@@ -42,13 +42,12 @@ export function reviveSamples(raw: unknown): Sample[] {
     if (!item || !isNumber(item.t)) {
       return [];
     }
-    const spend = revivePoint(item.spend);
-    const used = isNumber(item.spend?.used) && isNumber(item.spend?.limit);
+    const { percent, used, limit } = item.spend ?? {};
     return [{
       t: item.t,
       session: revivePoint(item.session),
       weekly: revivePoint(item.weekly),
-      spend: spend && used ? { ...spend, used: item.spend.used, limit: item.spend.limit } : undefined,
+      spend: [percent, used, limit].every(isNumber) ? { percent, used, limit } : undefined,
     }];
   });
 }

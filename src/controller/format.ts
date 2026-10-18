@@ -1,4 +1,5 @@
 import type { ViewState } from '../engine/scheduler';
+import type { Forecasts } from './forecast';
 import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
@@ -98,20 +99,30 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
+/** `At this pace` line for a window that would fill up before it resets. */
+function paceLine(label: string, reachesAt: number | undefined, now: number): string[] {
+  return reachesAt !== undefined && reachesAt > now ? [`${label} · at this pace, 100% in ~${formatRemaining(reachesAt - now, true)}`] : [];
+}
+
 /** Markdown for the hover: one line per window, joined with a hard line break. */
-export function formatTooltip(usage: Usage, now: number): string | undefined {
+export function formatTooltip(usage: Usage, now: number, forecasts: Forecasts = {}): string | undefined {
   const lines: string[] = [];
   if (usage.session?.resetsAt) {
     lines.push(`Session (5hr) · resets ${formatResetTime(usage.session.resetsAt, now)}`);
+    lines.push(...paceLine('Session (5hr)', forecasts.session, now));
   }
   if (usage.weekly?.resetsAt) {
     lines.push(`Weekly (7 day) · resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
+    lines.push(...paceLine('Weekly (7 day)', forecasts.weekly, now));
   }
   if (usage.spend) {
     const { used, limit, currency, percent, limitReached } = usage.spend;
     const remaining = formatMoney(Math.max(0, limit - used), currency);
     lines.push(`Monthly Credits · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
     lines.push(`${remaining} remaining · ${percent.toFixed(1)}% used`);
+    if (forecasts.spend !== undefined && forecasts.spend > now && !limitReached) {
+      lines.push(`At this pace, the limit is reached in ~${formatRemaining(forecasts.spend - now, true)}`);
+    }
   }
   return lines.length ? lines.join('  \n') : undefined;
 }
@@ -140,6 +151,7 @@ export interface ViewOptions {
   showSpend: boolean;
   windows: WindowsOption;
   thresholds: Thresholds;
+  forecasts?: Forecasts;
 }
 
 /** Builds everything the status bar shows from the current state. */
@@ -181,7 +193,7 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
   }
 
   const body = parts.length ? parts.join(' | ') : state.usage.spend ? 'spend hidden' : 'no data';
-  const tooltip = [formatTooltip(usage, now), state.stale ? errorTooltip(state, now) : undefined]
+  const tooltip = [formatTooltip(usage, now, options.forecasts), state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
   return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage, options.thresholds) };

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { computeForecasts, Forecasts } from './controller/forecast';
 import { StatusBar } from './controller/status_bar';
 import { configDir, readAccessToken } from './engine/credentials';
 import { UsageScheduler } from './engine/scheduler';
@@ -27,6 +28,8 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   let busy = false;
+  let recordedAt: number | undefined;
+  let forecasts: Forecasts = {};
   const tick = async (force = false) => {
     if (busy) {
       return;
@@ -34,10 +37,13 @@ export function activate(context: vscode.ExtensionContext): void {
     busy = true;
     try {
       const state = await scheduler.tick(force);
-      if (state.usage && state.fetchedAt !== undefined && !state.stale) {
+      // Once per new reading: the history file is read and parsed in full.
+      if (state.usage && state.fetchedAt !== undefined && !state.stale && state.fetchedAt !== recordedAt) {
+        recordedAt = state.fetchedAt;
         history.record(state.usage, state.fetchedAt);
+        forecasts = computeForecasts(history.read(), state.usage, state.fetchedAt);
       }
-      statusBar.update(state);
+      statusBar.update(state, forecasts);
     } finally {
       busy = false;
     }
