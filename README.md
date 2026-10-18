@@ -22,9 +22,12 @@ With `claudeUsage.extendedView` enabled:
 - The status bar turns yellow from 70 % and red from 90 % (the worst of the windows and the monthly spend). Both thresholds are settings.
 - Hover for the exact local reset time of each window (24-hour format). At the current pace, the hover also says when a window would fill up before it resets, or else the percent it is on pace to end at when it resets (`on pace to end at ~55%`); for the monthly limit, when it would be reached.
 - A notification the first time a window reaches the warning or the critical threshold in each cycle (once, even with several VS Code windows open).
-- **Claude Usage: Show History** shows the last 7 days in panels: a bar per session with the most it reached, the current weekly cycle against an even pace with where it is on pace to end, and the monthly credits if your account has them. The readings are stored only on your computer (30 days).
+- **Claude Usage: Show History** shows the last 7 days in panels: a bar per session with the most it reached, the current weekly cycle against an even pace with where it is on pace to end (and up to four earlier cycles, faint, to compare), and the monthly credits if your account has them. The charts are described for screen readers, and the bars at 90 % or more are striped, not only red. The readings are stored only on your computer (30 days).
 - Several VS Code windows share one request through a cache file, and back off on rate limits (HTTP 429). While a refresh is failing, the last good value stays visible marked with `~`.
-- Click the status bar item for a menu: refresh, switch between the compact and the extended view, history, settings. **Claude Usage: Refresh** (`Ctrl+Alt+U`, `Cmd+Alt+U` on macOS) refreshes directly.
+- Click the status bar item for a menu: refresh, switch between the compact and the extended view, history, a usage summary to copy, mute notifications, settings. **Claude Usage: Refresh** (`Ctrl+Alt+U`, `Cmd+Alt+U` on macOS) refreshes directly.
+- **Claude Usage: Copy Usage Summary** (also in the menu) puts the usage on the clipboard as one line, for example `Session (5hr) 42% · resets in 2h 10m | Weekly (7 day) 71% · resets in 2d 4h`. It follows `windows` and `showSpend`.
+- **Claude Usage: Mute Notifications…** (also in the menu) silences the notifications for an hour, or until the session or the weekly window resets. All your VS Code windows follow it, and the hover says until when. What is still above a threshold is notified at the next refresh after the mute ends. **Claude Usage: Unmute Notifications** ends it earlier.
+- **Claude Usage: Export History…** saves the stored readings as CSV or JSON, whichever file name you choose. The spend is left out when `showSpend` is `never`.
 
 ## Settings
 

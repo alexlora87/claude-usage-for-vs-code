@@ -9,6 +9,8 @@ const RANGE_MS = 7 * DAY;
 const GAP_MS = 30 * MINUTE;
 /** Same cycle when the reset times differ by less than this (the API may jitter). */
 const CYCLE_TOLERANCE_MS = 2 * MINUTE;
+/** How many cycles before the current one the weekly panel draws. */
+const PAST_CYCLES = 4;
 /** One hover point per this much time, so a week stays light. */
 const HOVER_EVERY_MS = 30 * MINUTE;
 /** From this percent a session bar is drawn as a full one. */
@@ -161,8 +163,13 @@ const lonePoint = (css: string, p: Reading, s: Scale) => `<circle class="${css} 
 const runShape = (css: string, run: Reading[], s: Scale) =>
   run.length === 1 ? lonePoint(css, run[0], s) : polyline(css, run.map((p) => [s.x(p.t), s.y(p.percent)]));
 
+/** A reading drawn at `t` that was taken at `at`. */
+interface Shifted extends Reading {
+  at: number;
+}
+
 /** Invisible circles that show a tooltip on hover, one per half hour and always the last of a run. */
-function hoverDots(css: string, run: Reading[], s: Scale, label: string): string {
+function hoverDots(css: string, run: Array<Reading & { at?: number }>, s: Scale, label: string): string {
   let lastHover = -Infinity;
   return run
     .filter((p, i) => {
@@ -170,17 +177,36 @@ function hoverDots(css: string, run: Reading[], s: Scale, label: string): string
       lastHover = keep ? p.t : lastHover;
       return keep;
     })
-    .map((p) => `<circle class="${css}-dot" cx="${f(s.x(p.t))}" cy="${f(s.y(p.percent))}" r="4"><title>${escapeHtml(`${label}: ${Math.round(p.percent)}% · ${formatTime(p.t)}`)}</title></circle>`)
+    .map((p) => `<circle class="${css}-dot" cx="${f(s.x(p.t))}" cy="${f(s.y(p.percent))}" r="4"><title>${escapeHtml(`${label}: ${Math.round(p.percent)}% · ${formatTime(p.at ?? p.t)}`)}</title></circle>`)
     .join('');
 }
 
-function panel(title: string, note: string, svg: string, legend: string, height: number): string {
-  return `<section><h2>${escapeHtml(title)}</h2><p class="sub">${escapeHtml(note)}</p><svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-label="${escapeHtml(title)}">${svg}</svg><p class="legend">${legend}</p></section>`;
+/** Stripes over the bars that reached HOT_AT, so they do not depend on the red alone. */
+const HATCH = '<defs><pattern id="hot-hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line class="hatch" x1="3" y1="0" x2="3" y2="6"/></pattern></defs>';
+
+/** The `desc` is what a screen reader says about the chart; a `<title>` here would show over the whole chart. */
+function panel(id: string, title: string, note: string, desc: string, svg: string, legend: string, height: number): string {
+  return `<section><h2 id="${id}-title">${escapeHtml(title)}</h2><p class="sub">${escapeHtml(note)}</p><svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="${id}-title" aria-describedby="${id}-desc"><desc id="${id}-desc">${escapeHtml(desc)}</desc>${svg}</svg><p class="legend">${legend}</p></section>`;
+}
+
+/** The cycles before `current`, newest first, each with its readings moved to where they fall in the current one. */
+function pastCycles(all: Cycle[], current: Cycle): Array<{ end: number; peak: number; runs: Shifted[][] }> {
+  return all
+    .filter((c) => c.end < current.end - CYCLE_TOLERANCE_MS)
+    .sort((a, b) => b.end - a.end)
+    .map((c) => {
+      // A stale reading may carry a time outside its cycle: it does not belong on the chart.
+      const points = c.points.filter((p) => p.t >= c.start && p.t <= c.end);
+      return { end: c.end, peak: Math.max(0, ...points.map((p) => p.percent)), runs: runsOf(points.map((p) => ({ t: current.start + (p.t - c.start), percent: p.percent, at: p.t }))) };
+    })
+    .filter((c) => c.runs.length)
+    .slice(0, PAST_CYCLES);
 }
 
 /** The current weekly cycle against an even pace, with where it is on pace to end. */
 function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
-  const cycle = cycles(samples, 'weekly').reduce<Cycle | undefined>((latest, c) => (!latest || c.end > latest.end ? c : latest), undefined);
+  const weeks = cycles(samples, 'weekly');
+  const cycle = weeks.reduce<Cycle | undefined>((latest, c) => (!latest || c.end > latest.end ? c : latest), undefined);
   if (!cycle || cycle.end < now - RANGE_MS) {
     return '';
   }
@@ -218,8 +244,18 @@ function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
 
   const nowLine = now > cycle.start && now < cycle.end ? `<line class="now" x1="${f(s.x(now))}" x2="${f(s.x(now))}" y1="${PLOT.top}" y2="${layout.height - PLOT.bottom}"/>` : '';
   const pace = segment('pace', [s.x(cycle.start), s.y(0)], [s.x(cycle.end), s.y(100)]);
-  const legend = '<span class="swatch weekly-bg"></span>Usage <span class="swatch pace-bg"></span>Even pace <span class="swatch projection-bg"></span>Projection';
-  return panel('Weekly (7 day)', note, axes(s, cycle.start, cycle.end) + pace + nowLine + drawn + projection, legend, layout.height);
+  const past = pastCycles(weeks, cycle);
+  let before = '';
+  past.forEach((c, i) => {
+    const label = `Cycle that reset ${formatTime(c.end)}`;
+    before += c.runs.map((run) => runShape(`past age-${i + 1}`, run, s) + hoverDots('past', run, s, label)).join('');
+  });
+  if (past.length) {
+    note += ` · ${past.length} previous cycle${past.length === 1 ? '' : 's'}, peak${past.length === 1 ? '' : 's'} ${past.map((c) => `${Math.round(c.peak)}%`).join(', ')}`;
+  }
+  const legend = `<span class="swatch weekly-bg"></span>Usage <span class="swatch pace-bg"></span>Even pace <span class="swatch projection-bg"></span>Projection${past.length ? ' <span class="swatch past-bg"></span>Previous cycles' : ''}`;
+  const desc = `Line chart of the weekly cycle against an even pace. ${note}. Latest reading ${Math.round(last.percent)}%.`;
+  return panel('weekly', 'Weekly (7 day)', note, desc, axes(s, cycle.start, cycle.end) + before + pace + nowLine + drawn + projection, legend, layout.height);
 }
 
 /** One bar per session of the last 7 days: the most it reached. */
@@ -237,12 +273,24 @@ function sessionPanel(samples: Sample[], now: number, layout: Layout): string {
       // At least 2 px, so a session that stayed at 0 % is still a bar with its tooltip.
       const height = Math.max(s.y(0) - s.y(c.peak), 2);
       const text = c.end > now ? `Session in progress · ${Math.round(c.peak)}% so far` : `Session that ended ${formatTime(c.end)} · peak ${Math.round(c.peak)}%`;
-      return `<rect class="bar${c.peak >= HOT_AT ? ' hot' : ''}" x="${f(x0)}" y="${f(s.y(0) - height)}" width="${f(Math.max(x1 - x0, 2))}" height="${f(height)}" rx="2"><title>${escapeHtml(text)}</title></rect>`;
+      const geometry = `x="${f(x0)}" y="${f(s.y(0) - height)}" width="${f(Math.max(x1 - x0, 2))}" height="${f(height)}" rx="2"`;
+      const hatch = c.peak >= HOT_AT ? `<rect class="bar-hatch" ${geometry} fill="url(#hot-hatch)"/>` : '';
+      return `<rect class="bar${c.peak >= HOT_AT ? ' hot' : ''}" ${geometry}><title>${escapeHtml(text)}</title></rect>${hatch}`;
     })
     .join('');
   const full = sessions.filter((c) => c.peak >= HOT_AT).length;
   const legend = `<span class="swatch session-bg"></span>Peak of each session <span class="swatch hot-bg"></span>Reached ${HOT_AT}%`;
-  return panel('Sessions (5hr)', `Last 7 days · ${sessions.length} session${sessions.length === 1 ? '' : 's'}, ${full} at ${HOT_AT}% or more`, axes(s, start, now) + bars, legend, layout.height);
+  const count = `${sessions.length} session${sessions.length === 1 ? '' : 's'}`;
+  const highest = Math.round(Math.max(...sessions.map((c) => c.peak)));
+  return panel(
+    'sessions',
+    'Sessions (5hr)',
+    `Last 7 days · ${count}, ${full} at ${HOT_AT}% or more`,
+    `Bar chart of the peak of each session in the last 7 days: ${count}, ${full} reached ${HOT_AT}% or more, the highest peak was ${highest}%.`,
+    (full ? HATCH : '') + axes(s, start, now) + bars,
+    legend,
+    layout.height,
+  );
 }
 
 /** The monthly spend over the last 7 days, cut at gaps and at a new month. */
@@ -254,7 +302,9 @@ function spendPanel(samples: Sample[], now: number, layout: Layout): string {
   const start = now - RANGE_MS;
   const s = scale(start, now, layout);
   const lines = runs.map((run) => runShape('spend', run, s) + hoverDots('spend', run, s, 'Monthly Credits')).join('');
-  return panel('Monthly Credits', 'Last 7 days', axes(s, start, now) + lines, '<span class="swatch spend-bg"></span>Share of the monthly limit', layout.height);
+  const latest = runs[runs.length - 1][runs[runs.length - 1].length - 1];
+  const desc = `Line chart of the share of the monthly credits limit used in the last 7 days. Latest reading ${Math.round(latest.percent)}% on ${formatTime(latest.t)}.`;
+  return panel('spend', 'Monthly Credits', 'Last 7 days', desc, axes(s, start, now) + lines, '<span class="swatch spend-bg"></span>Share of the monthly limit', layout.height);
 }
 
 export function renderPanels(samples: Sample[], now: number, allowed: SeriesKey[], size: ChartSize = 'medium'): string {

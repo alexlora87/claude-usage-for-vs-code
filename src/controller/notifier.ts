@@ -92,6 +92,11 @@ export function claimCrossing(dir: string, account: string, crossing: Crossing):
   return claim(dir, markerName(account, crossing));
 }
 
+/** The crossings this window has to show: none while muted, and then nothing is claimed either. */
+export function claimUnlessMuted(dir: string, account: string, list: Crossing[], muted: boolean): Crossing[] {
+  return muted ? [] : list.filter((crossing) => claimCrossing(dir, account, crossing));
+}
+
 /** Removes the markers of cycles that are over. */
 export function pruneMarkers(dir: string, now: number): void {
   let names: string[];

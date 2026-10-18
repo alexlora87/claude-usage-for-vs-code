@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_THRESHOLDS } from './format';
-import { claim, claimCrossing, crossings, markerName, pruneMarkers } from './notifier';
+import { claim, claimCrossing, claimUnlessMuted, crossings, markerName, pruneMarkers } from './notifier';
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
@@ -62,6 +62,13 @@ describe('markers', () => {
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
   const [crossing] = crossings({ session: { percent: 80, resetsAt: new Date(now + MIN) } }, DEFAULT_THRESHOLDS, now);
+
+  it('shows nothing and claims nothing while muted, then shows it once the mute is over', () => {
+    expect(claimUnlessMuted(dir, 'abc', [crossing], true)).toEqual([]);
+    expect(existsSync(join(dir, markerName('abc', crossing)))).toBe(false);
+    expect(claimUnlessMuted(dir, 'abc', [crossing], false)).toEqual([crossing]);
+    expect(claimUnlessMuted(dir, 'abc', [crossing], false)).toEqual([]);
+  });
 
   it('lets only the first claim through', () => {
     const name = markerName('abc', crossing);

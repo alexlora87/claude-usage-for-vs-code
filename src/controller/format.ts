@@ -162,6 +162,8 @@ export interface ViewOptions {
   windows: WindowsOption;
   thresholds: Thresholds;
   forecasts?: Forecasts;
+  /** When the notifications are muted until, if they are. */
+  mutedUntil?: number;
 }
 
 /** The usage the settings let the user see: selected windows, and the spend unless hidden. */
@@ -171,6 +173,24 @@ export function visibleUsage(usage: Usage, options: Pick<ViewOptions, 'windows' 
     weekly: options.windows === 'session' ? undefined : usage.weekly,
     spend: options.showSpend ? usage.spend : undefined,
   };
+}
+
+/** The usage as one plain line to paste somewhere, or undefined when the settings leave nothing to show. */
+export function formatSummary(usage: Usage, options: Pick<ViewOptions, 'windows' | 'showSpend'>, now: number): string | undefined {
+  const { session, weekly, spend } = visibleUsage(usage, options);
+  // A window whose reset has passed is an old reading: its percent says nothing about now.
+  const current = (w: UsageWindow | undefined) => (w && !(w.resetsAt && w.resetsAt.getTime() <= now) ? w : undefined);
+  const window = (label: string, w: UsageWindow, longWindow: boolean) =>
+    `${label} ${Math.round(w.percent)}%${w.resetsAt ? ` · resets in ${formatRemaining(w.resetsAt.getTime() - now, longWindow)}` : ''}`;
+  const [currentSession, currentWeekly] = [current(session), current(weekly)];
+  const parts = [
+    currentSession ? window('Session (5hr)', currentSession, false) : undefined,
+    currentWeekly ? window('Weekly (7 day)', currentWeekly, true) : undefined,
+    spend
+      ? `Monthly Credits ${formatMoney(spend.used, spend.currency)} of ${formatMoney(spend.limit, spend.currency)} (${Math.round(spend.percent)}%)${spend.limitReached ? ' · limit reached' : ''}`
+      : undefined,
+  ].filter((part): part is string => part !== undefined);
+  return parts.length ? parts.join(' | ') : undefined;
 }
 
 /** Builds everything the status bar shows from the current state. */
@@ -208,7 +228,8 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
   }
 
   const body = parts.length ? parts.join(' | ') : state.usage.spend ? 'spend hidden' : 'no data';
-  const tooltip = [formatTooltip(usage, now, options.forecasts), state.stale ? errorTooltip(state, now) : undefined]
+  const muted = options.mutedUntil !== undefined && options.mutedUntil > now ? `Notifications muted until ${formatResetTime(new Date(options.mutedUntil), now)}` : undefined;
+  const tooltip = [formatTooltip(usage, now, options.forecasts), muted, state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
   return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage, options.thresholds) };

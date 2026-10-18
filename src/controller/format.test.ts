@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
+import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatSummary, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -258,6 +258,56 @@ describe('buildView', () => {
     const reached = buildView({ ...base, usage: { spend: { ...spend, limitReached: true } } }, compact, icon, now);
     expect(reached.level).toBe('critical');
     expect(reached.text).toContain('· limit reached');
+  });
+});
+
+describe('muted notifications in the tooltip', () => {
+  const now = new Date(2026, 9, 16, 12, 0).getTime();
+  const state = { stale: false, loading: false, usage: { session: { percent: 32, resetsAt: new Date(now + 7 * MIN) } } };
+  const options = { extended: false, showSpend: true, windows: 'both' as const, thresholds: DEFAULT_THRESHOLDS };
+
+  it('says until when they are muted', () => {
+    const tooltip = buildView(state, { ...options, mutedUntil: new Date(2026, 9, 16, 18, 45).getTime() }, () => '*', now).tooltip;
+    expect(tooltip).toContain('Notifications muted until today at 18:45');
+  });
+
+  it('says nothing when they are not muted, or when the mute is over', () => {
+    expect(buildView(state, options, () => '*', now).tooltip).not.toContain('muted');
+    expect(buildView(state, { ...options, mutedUntil: now - 1 }, () => '*', now).tooltip).not.toContain('muted');
+  });
+});
+
+describe('formatSummary', () => {
+  const now = new Date(2026, 9, 16, 12, 0).getTime();
+  const usage = {
+    session: { percent: 42.4, resetsAt: new Date(now + 2 * HOUR + 10 * MIN) },
+    weekly: { percent: 71, resetsAt: new Date(now + 2 * DAY + 4 * HOUR) },
+    spend: { used: 7.29, limit: 20, currency: 'USD', percent: 36.45, limitReached: false },
+  };
+  const all = { windows: 'both' as const, showSpend: true };
+
+  it('lists the windows with their reset and the spend', () => {
+    expect(formatSummary(usage, all, now)).toBe('Session (5hr) 42% · resets in 2h 10m | Weekly (7 day) 71% · resets in 2d 4h | Monthly Credits $7.29 of $20.00 (36%)');
+  });
+
+  it('follows the settings: windows and spend', () => {
+    expect(formatSummary(usage, { windows: 'weekly', showSpend: false }, now)).toBe('Weekly (7 day) 71% · resets in 2d 4h');
+    expect(formatSummary(usage, { windows: 'session', showSpend: true }, now)).toBe('Session (5hr) 42% · resets in 2h 10m | Monthly Credits $7.29 of $20.00 (36%)');
+  });
+
+  it('leaves out the reset when the API gave none, and says when the limit was reached', () => {
+    expect(formatSummary({ session: { percent: 10 }, spend: { ...usage.spend, limitReached: true } }, all, now)).toBe('Session (5hr) 10% | Monthly Credits $7.29 of $20.00 (36%) · limit reached');
+  });
+
+  it('leaves out a window whose reset has passed, because its percent is an old reading', () => {
+    const stale = { session: { percent: 90, resetsAt: new Date(now - MIN) }, weekly: usage.weekly };
+    expect(formatSummary(stale, { windows: 'both', showSpend: false }, now)).toBe('Weekly (7 day) 71% · resets in 2d 4h');
+    expect(formatSummary({ session: stale.session }, all, now)).toBeUndefined();
+  });
+
+  it('has nothing to say when the settings hide everything', () => {
+    expect(formatSummary({ spend: usage.spend }, { windows: 'both', showSpend: false }, now)).toBeUndefined();
+    expect(formatSummary({}, all, now)).toBeUndefined();
   });
 });
 
