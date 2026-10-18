@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
+import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatSummary, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -258,6 +258,34 @@ describe('buildView', () => {
     const reached = buildView({ ...base, usage: { spend: { ...spend, limitReached: true } } }, compact, icon, now);
     expect(reached.level).toBe('critical');
     expect(reached.text).toContain('· limit reached');
+  });
+});
+
+describe('formatSummary', () => {
+  const now = new Date(2026, 9, 16, 12, 0).getTime();
+  const usage = {
+    session: { percent: 42.4, resetsAt: new Date(now + 2 * HOUR + 10 * MIN) },
+    weekly: { percent: 71, resetsAt: new Date(now + 2 * DAY + 4 * HOUR) },
+    spend: { used: 7.29, limit: 20, currency: 'USD', percent: 36.45, limitReached: false },
+  };
+  const all = { windows: 'both' as const, showSpend: true };
+
+  it('lists the windows with their reset and the spend', () => {
+    expect(formatSummary(usage, all, now)).toBe('Session (5hr) 42% · resets in 2h 10m | Weekly (7 day) 71% · resets in 2d 4h | Monthly Credits $7.29 of $20.00 (36%)');
+  });
+
+  it('follows the settings: windows and spend', () => {
+    expect(formatSummary(usage, { windows: 'weekly', showSpend: false }, now)).toBe('Weekly (7 day) 71% · resets in 2d 4h');
+    expect(formatSummary(usage, { windows: 'session', showSpend: true }, now)).toBe('Session (5hr) 42% · resets in 2h 10m | Monthly Credits $7.29 of $20.00 (36%)');
+  });
+
+  it('leaves out the reset when the API gave none, and says when the limit was reached', () => {
+    expect(formatSummary({ session: { percent: 10 }, spend: { ...usage.spend, limitReached: true } }, all, now)).toBe('Session (5hr) 10% | Monthly Credits $7.29 of $20.00 (36%) · limit reached');
+  });
+
+  it('has nothing to say when the settings hide everything', () => {
+    expect(formatSummary({ spend: usage.spend }, { windows: 'both', showSpend: false }, now)).toBeUndefined();
+    expect(formatSummary({}, all, now)).toBeUndefined();
   });
 });
 

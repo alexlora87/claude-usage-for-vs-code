@@ -45,6 +45,10 @@
         "title": "Claude Usage: Toggle Extended View"
       },
       {
+        "command": "claudeUsage.copySummary",
+        "title": "Claude Usage: Copy Usage Summary"
+      },
+      {
         "command": "claudeUsage.openSettings",
         "title": "Claude Usage: Open Settings"
       }

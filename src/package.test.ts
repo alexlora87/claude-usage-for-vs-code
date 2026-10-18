@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { menuItems } from './controller/menu_items';
 
-const properties: Record<string, { order?: number }> = JSON.parse(readFileSync('package.json', 'utf8')).contributes.configuration.properties;
+const { contributes } = JSON.parse(readFileSync('package.json', 'utf8'));
+const properties: Record<string, { order?: number }> = contributes.configuration.properties;
 
 describe('settings schema', () => {
   // Without `order`, the Settings editor lists the settings alphabetically.
@@ -27,5 +29,14 @@ describe('settings schema', () => {
       'criticalThreshold',
       'historyChartSize',
     ]);
+  });
+});
+
+describe('commands', () => {
+  it('declares every command the menu runs, so it is also in the Command Palette', () => {
+    const declared = contributes.commands.map((command: { command: string }) => command.command);
+    for (const item of menuItems(false)) {
+      expect(declared).toContain(item.command);
+    }
   });
 });

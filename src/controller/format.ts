@@ -173,6 +173,21 @@ export function visibleUsage(usage: Usage, options: Pick<ViewOptions, 'windows' 
   };
 }
 
+/** The usage as one plain line to paste somewhere, or undefined when the settings leave nothing to show. */
+export function formatSummary(usage: Usage, options: Pick<ViewOptions, 'windows' | 'showSpend'>, now: number): string | undefined {
+  const { session, weekly, spend } = visibleUsage(usage, options);
+  const window = (label: string, w: UsageWindow, longWindow: boolean) =>
+    `${label} ${Math.round(w.percent)}%${w.resetsAt ? ` · resets in ${formatRemaining(w.resetsAt.getTime() - now, longWindow)}` : ''}`;
+  const parts = [
+    session ? window('Session (5hr)', session, false) : undefined,
+    weekly ? window('Weekly (7 day)', weekly, true) : undefined,
+    spend
+      ? `Monthly Credits ${formatMoney(spend.used, spend.currency)} of ${formatMoney(spend.limit, spend.currency)} (${Math.round(spend.percent)}%)${spend.limitReached ? ' · limit reached' : ''}`
+      : undefined,
+  ].filter((part): part is string => part !== undefined);
+  return parts.length ? parts.join(' | ') : undefined;
+}
+
 /** Builds everything the status bar shows from the current state. */
 export function buildView(state: ViewState, options: ViewOptions, icon: (percent: number) => string, now: number): StatusView {
   const { extended } = options;

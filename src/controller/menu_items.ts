@@ -8,6 +8,7 @@ export function menuItems(extended: boolean): MenuItem[] {
     { label: '$(refresh) Refresh now', command: 'claudeUsage.refresh' },
     { label: extended ? '$(screen-normal) Switch to compact view' : '$(screen-full) Switch to extended view', command: 'claudeUsage.toggleExtendedView' },
     { label: '$(graph) Show usage history', command: 'claudeUsage.showHistory' },
+    { label: '$(copy) Copy usage summary', command: 'claudeUsage.copySummary' },
     { label: '$(gear) Open settings', command: 'claudeUsage.openSettings' },
   ];
 }

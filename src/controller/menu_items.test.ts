@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { menuItems, scopeOf } from './menu_items';
 
 describe('menuItems', () => {
-  it('offers refresh, the view switch, the history and the settings', () => {
+  it('offers refresh, the view switch, the history, the summary and the settings', () => {
     expect(menuItems(false).map((item) => item.command)).toEqual([
       'claudeUsage.refresh',
       'claudeUsage.toggleExtendedView',
       'claudeUsage.showHistory',
+      'claudeUsage.copySummary',
       'claudeUsage.openSettings',
     ]);
   });

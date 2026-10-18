@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { computeForecasts, Forecasts } from './controller/forecast';
-import { visibleUsage } from './controller/format';
+import { formatSummary, visibleUsage } from './controller/format';
 import { claimCrossing, crossings, pruneMarkers } from './controller/notifier';
 import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
 import { HistoryView } from './controller/history_view';
@@ -12,6 +12,7 @@ import { History, historyFile } from './engine/history';
 import { accountId, cacheFile, SharedCache } from './engine/shared_cache';
 import { fetchUsage } from './engine/usage_api';
 import { Usage } from './shared/types';
+import type { ViewState } from './engine/scheduler';
 
 /** Windows poll the shared cache this often; network requests are still limited by refreshInterval. */
 const POLL_MS = 10_000;
@@ -35,6 +36,17 @@ function notify(storageDir: string, account: string, usage: Usage, now: number):
   }
 }
 
+async function copySummary(state: ViewState): Promise<void> {
+  const summary = state.usage && formatSummary(state.usage, readOptions(), Date.now());
+  if (!summary) {
+    void vscode.window.showInformationMessage('Claude Usage: no usage to copy yet.');
+    return;
+  }
+  const asOf = state.stale && state.fetchedAt !== undefined ? ` (as of ${new Date(state.fetchedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })})` : '';
+  await vscode.env.clipboard.writeText(summary + asOf);
+  vscode.window.setStatusBarMessage('Claude Usage: summary copied', 3000);
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const storageDir = context.globalStorageUri.fsPath;
   const account = accountId(configDir());
@@ -55,6 +67,7 @@ export function activate(context: vscode.ExtensionContext): void {
   let forcedWhileBusy = false;
   let recordedAt: number | undefined;
   let forecasts: Forecasts = {};
+  let lastState: ViewState = { stale: false, loading: true };
   const tick = async (force = false) => {
     if (busy) {
       // A manual refresh must not be lost: it runs as soon as the current request ends.
@@ -71,6 +84,7 @@ export function activate(context: vscode.ExtensionContext): void {
         historyView.refresh();
         notify(storageDir, account, state.usage, Date.now());
       }
+      lastState = state;
       statusBar.update(state, forecasts);
     } finally {
       busy = false;
@@ -92,6 +106,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('claudeUsage.showHistory', () => historyView.show()),
     vscode.commands.registerCommand('claudeUsage.showMenu', showMenu),
     vscode.commands.registerCommand('claudeUsage.toggleExtendedView', toggleExtendedView),
+    vscode.commands.registerCommand('claudeUsage.copySummary', () => copySummary(lastState)),
     vscode.commands.registerCommand('claudeUsage.openSettings', openSettings),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (SETTINGS_KEYS.some((key) => e.affectsConfiguration(`claudeUsage.${key}`))) {
