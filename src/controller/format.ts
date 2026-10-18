@@ -1,5 +1,5 @@
 import type { ViewState } from '../engine/scheduler';
-import type { Forecasts } from './forecast';
+import type { Forecasts, WindowForecast } from './forecast';
 import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
@@ -99,9 +99,19 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
-/** `At this pace` line for a window that would fill up before it resets. */
-function paceLine(label: string, reachesAt: number | undefined, now: number): string[] {
-  return reachesAt !== undefined && reachesAt > now ? [`${label} · at this pace, 100% in ~${formatRemaining(reachesAt - now, true)}`] : [];
+/** Below this time left, where a window ends up is no longer news. */
+const MIN_LEFT_MS = 10 * MINUTE;
+
+/** The pace line of a window: when it fills up, or the percent it is on pace to end at when it resets. */
+function paceLine(label: string, forecast: WindowForecast | undefined, resetsAt: Date, now: number): string[] {
+  if (!forecast) {
+    return [];
+  }
+  if ('fullAt' in forecast) {
+    return forecast.fullAt > now ? [`${label} · at this pace, 100% in ~${formatRemaining(forecast.fullAt - now, true)}`] : [];
+  }
+  // Never 100%: that would be the "fills up" line.
+  return resetsAt.getTime() - now >= MIN_LEFT_MS ? [`${label} · on pace to end at ~${Math.min(99, Math.round(forecast.endPercent))}%`] : [];
 }
 
 /** Markdown for the hover: one line per window, joined with a hard line break. */
@@ -109,11 +119,11 @@ export function formatTooltip(usage: Usage, now: number, forecasts: Forecasts = 
   const lines: string[] = [];
   if (usage.session?.resetsAt) {
     lines.push(`Session (5hr) · resets ${formatResetTime(usage.session.resetsAt, now)}`);
-    lines.push(...paceLine('Session (5hr)', forecasts.session, now));
+    lines.push(...paceLine('Session (5hr)', forecasts.session, usage.session.resetsAt, now));
   }
   if (usage.weekly?.resetsAt) {
     lines.push(`Weekly (7 day) · resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
-    lines.push(...paceLine('Weekly (7 day)', forecasts.weekly, now));
+    lines.push(...paceLine('Weekly (7 day)', forecasts.weekly, usage.weekly.resetsAt, now));
   }
   if (usage.spend) {
     const { used, limit, currency, percent, limitReached } = usage.spend;
