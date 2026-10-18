@@ -2,7 +2,7 @@
   "name": "claude-usage-vscode",
   "displayName": "Claude Usage for VS Code",
   "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar, and the monthly spend on accounts billed by money.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "alexlora87",
   "icon": "resources/icon.png",
   "license": "MIT",
