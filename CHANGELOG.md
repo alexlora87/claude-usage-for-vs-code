@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+### Added
+
+- `claudeUsage.indicator` setting: `ring` (default, as before) or `bar`, a progress bar next to each percentage.
+
 ## 1.0.0
 
 ### Added
