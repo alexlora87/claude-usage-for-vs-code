@@ -17,7 +17,7 @@ export class StatusBar implements vscode.Disposable {
   private forecasts: Forecasts = {};
 
   constructor() {
-    this.item.command = 'claudeUsage.refresh';
+    this.item.command = 'claudeUsage.showMenu';
     this.render();
     this.item.show();
   }

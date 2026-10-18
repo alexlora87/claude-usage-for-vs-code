@@ -4,6 +4,7 @@ import { visibleUsage } from './controller/format';
 import { claim, crossings, markerName, pruneMarkers } from './controller/notifier';
 import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
 import { HistoryView } from './controller/history_view';
+import { openSettings, showMenu, toggleExtendedView } from './controller/menu';
 import { StatusBar } from './controller/status_bar';
 import { configDir, readAccessToken } from './engine/credentials';
 import { UsageScheduler } from './engine/scheduler';
@@ -83,6 +84,9 @@ export function activate(context: vscode.ExtensionContext): void {
     { dispose: () => clearInterval(timer) },
     vscode.commands.registerCommand('claudeUsage.refresh', () => tick(true)),
     vscode.commands.registerCommand('claudeUsage.showHistory', () => historyView.show()),
+    vscode.commands.registerCommand('claudeUsage.showMenu', showMenu),
+    vscode.commands.registerCommand('claudeUsage.toggleExtendedView', toggleExtendedView),
+    vscode.commands.registerCommand('claudeUsage.openSettings', openSettings),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (SETTINGS_KEYS.some((key) => e.affectsConfiguration(`claudeUsage.${key}`))) {
         statusBar.render();

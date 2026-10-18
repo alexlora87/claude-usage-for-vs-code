@@ -35,6 +35,18 @@
       {
         "command": "claudeUsage.showHistory",
         "title": "Claude Usage: Show History"
+      },
+      {
+        "command": "claudeUsage.showMenu",
+        "title": "Claude Usage: Show Menu"
+      },
+      {
+        "command": "claudeUsage.toggleExtendedView",
+        "title": "Claude Usage: Toggle Extended View"
+      },
+      {
+        "command": "claudeUsage.openSettings",
+        "title": "Claude Usage: Open Settings"
       }
     ],
     "keybindings": [
