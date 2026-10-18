@@ -17,6 +17,7 @@ With `claudeUsage.extendedView` enabled:
 ## Features
 
 - Reads the credentials Claude Code already stores; there is no separate login.
+- A ring next to each percentage, or a progress bar if you prefer it (`claudeUsage.indicator`).
 - Accounts billed by money (for example Enterprise) get their monthly credits and limit: `✦ Claude Usage · Credits $7.29 / $800.00 ◔ 1%`. The hover adds the amount remaining and the exact percentage. It only appears when the account has extra usage enabled with a limit.
 - The status bar turns yellow from 70 % and red from 90 % (the worst of the windows and the monthly spend). Both thresholds are settings.
 - Hover for the exact local reset time of each window (24-hour format). When a window would fill up before it resets, the hover also says when, at the current pace; the same for the monthly limit.
@@ -31,6 +32,7 @@ With `claudeUsage.extendedView` enabled:
 |---|---|---|
 | `claudeUsage.refreshInterval` | `120` | Seconds between usage requests (30-3600). |
 | `claudeUsage.extendedView` | `false` | Show full labels instead of the compact ones. |
+| `claudeUsage.indicator` | `ring` | `ring` or `bar`: what is drawn next to each percentage. |
 | `claudeUsage.showSpend` | `auto` | `auto` shows the monthly spend when the account has it; `never` hides it. |
 | `claudeUsage.windows` | `both` | `both`, `session` or `weekly`: which windows the status bar, the notifications and the history show. |
 | `claudeUsage.warningThreshold` | `70` | Percentage from which the status bar turns yellow. |

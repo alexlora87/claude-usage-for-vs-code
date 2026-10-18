@@ -1,26 +1,40 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { iconFor } from './icons';
+import { Indicator, iconFor } from './icons';
 
 const contributed = JSON.parse(readFileSync('package.json', 'utf8')).contributes.icons;
 
 describe('iconFor', () => {
   it('rounds to the nearest 5% and pads the step', () => {
-    expect(iconFor(0)).toBe('$(claude-usage-ring-00)');
-    expect(iconFor(32)).toBe('$(claude-usage-ring-30)');
-    expect(iconFor(33)).toBe('$(claude-usage-ring-35)');
-    expect(iconFor(100)).toBe('$(claude-usage-ring-100)');
+    expect(iconFor(0, 'ring')).toBe('$(claude-usage-ring-00)');
+    expect(iconFor(32, 'ring')).toBe('$(claude-usage-ring-30)');
+    expect(iconFor(33, 'ring')).toBe('$(claude-usage-ring-35)');
+    expect(iconFor(100, 'ring')).toBe('$(claude-usage-ring-100)');
+  });
+
+  it('draws the bar in the same steps', () => {
+    expect(iconFor(0, 'bar')).toBe('$(claude-usage-bar-00)');
+    expect(iconFor(32, 'bar')).toBe('$(claude-usage-bar-30)');
+    expect(iconFor(100, 'bar')).toBe('$(claude-usage-bar-100)');
   });
 
   it('clamps out-of-range values', () => {
-    expect(iconFor(-5)).toBe('$(claude-usage-ring-00)');
-    expect(iconFor(140)).toBe('$(claude-usage-ring-100)');
+    expect(iconFor(-5, 'ring')).toBe('$(claude-usage-ring-00)');
+    expect(iconFor(140, 'bar')).toBe('$(claude-usage-bar-100)');
   });
 
   it('only returns glyphs registered in package.json', () => {
-    for (let percent = 0; percent <= 100; percent++) {
-      const id = iconFor(percent).slice(2, -1);
-      expect(contributed[id], id).toBeDefined();
+    for (const indicator of ['ring', 'bar'] as Indicator[]) {
+      for (let percent = 0; percent <= 100; percent++) {
+        const id = iconFor(percent, indicator).slice(2, -1);
+        expect(contributed[id], id).toBeDefined();
+      }
     }
+  });
+
+  it('registers every glyph in one font file that exists', () => {
+    const fonts = new Set(Object.values<{ default: { fontPath: string } }>(contributed).map((icon) => icon.default.fontPath));
+    expect(fonts.size).toBe(1);
+    expect(existsSync([...fonts][0])).toBe(true);
   });
 });
