@@ -73,7 +73,10 @@
         },
         "claudeUsage.showSpend": {
           "type": "string",
-          "enum": ["auto", "never"],
+          "enum": [
+            "auto",
+            "never"
+          ],
           "enumDescriptions": [
             "Show the monthly spend when the account has extra usage enabled with a limit.",
             "Never show the monthly spend."
@@ -83,7 +86,11 @@
         },
         "claudeUsage.windows": {
           "type": "string",
-          "enum": ["both", "session", "weekly"],
+          "enum": [
+            "both",
+            "session",
+            "weekly"
+          ],
           "enumDescriptions": [
             "Show the 5-hour session and the 7-day window.",
             "Show only the 5-hour session.",
