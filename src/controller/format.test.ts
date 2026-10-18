@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildView, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, worstLevel } from './format';
+import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -11,6 +11,22 @@ describe('levelFor', () => {
     expect(levelFor(70)).toBe('warning');
     expect(levelFor(89)).toBe('warning');
     expect(levelFor(90)).toBe('critical');
+  });
+
+  it('applies custom thresholds', () => {
+    const thresholds = { warning: 50, critical: 80 };
+    expect(levelFor(49, thresholds)).toBe('ok');
+    expect(levelFor(50, thresholds)).toBe('warning');
+    expect(levelFor(80, thresholds)).toBe('critical');
+    expect(worstLevel({ session: { percent: 60 } }, thresholds)).toBe('warning');
+  });
+
+  it('falls back to the defaults when the thresholds are not ordered', () => {
+    expect(thresholdsFrom(50, 80)).toEqual({ warning: 50, critical: 80 });
+    expect(thresholdsFrom(90, 70)).toEqual(DEFAULT_THRESHOLDS);
+    expect(thresholdsFrom(70, 70)).toEqual(DEFAULT_THRESHOLDS);
+    expect(thresholdsFrom(0, 90)).toEqual(DEFAULT_THRESHOLDS);
+    expect(thresholdsFrom(70, 101)).toEqual(DEFAULT_THRESHOLDS);
   });
 
   it('uses the worst available window', () => {
@@ -86,6 +102,21 @@ describe('reset time', () => {
     );
   });
 
+  it('adds the pace lines only when a window would fill up before it resets', () => {
+    const reset = new Date(2026, 9, 16, 18, 45);
+    const usage = { session: { percent: 50, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } };
+    const tooltip = formatTooltip(usage, now, { session: now + 80 * MIN, weekly: now - 1 });
+    expect(tooltip).toBe(
+      'Session (5hr) · resets today at 18:45  \nSession (5hr) · at this pace, 100% in ~1h 20m  \nWeekly (7 day) · resets today at 18:45',
+    );
+  });
+
+  it('adds when the monthly limit is reached at this pace', () => {
+    const spend = { used: 100, limit: 800, currency: 'USD', percent: 12.5, limitReached: false };
+    expect(formatTooltip({ spend }, now, { spend: now + 30 * DAY })).toContain('At this pace, the limit is reached in ~30d 0h');
+    expect(formatTooltip({ spend }, now)).not.toContain('At this pace');
+  });
+
   it('omits lines without a reset time, and the whole tooltip when none has one', () => {
     const session = { percent: 1, resetsAt: new Date(2026, 9, 16, 18, 45) };
     expect(formatTooltip({ session, weekly: { percent: 2 } }, now)).toBe(
@@ -103,8 +134,8 @@ describe('buildView', () => {
   };
   const icon = () => '*';
   const base = { stale: false, loading: false };
-  const compact = { extended: false, showSpend: true };
-  const extendedView = { extended: true, showSpend: true };
+  const compact = { extended: false, showSpend: true, windows: 'both' as const, thresholds: DEFAULT_THRESHOLDS };
+  const extendedView = { ...compact, extended: true };
   const spend = { used: 7.29, limit: 800, currency: 'USD', percent: 0.91, limitReached: false };
 
   it('renders the default view', () => {
@@ -151,14 +182,31 @@ describe('buildView', () => {
     expect(text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h | Credits $7.29 / $800.00 * 1%');
   });
 
+  it('shows only the selected window', () => {
+    expect(buildView({ ...base, usage }, { ...compact, windows: 'session' }, icon, now).text).toBe('$(sparkle) Claude Usage · 5h * 32% · 0h 7m');
+    expect(buildView({ ...base, usage }, { ...compact, windows: 'weekly' }, icon, now).text).toBe('$(sparkle) Claude Usage · 7d * 4% · 6d 21h');
+  });
+
+  it('ignores hidden windows for the warning level and the hover', () => {
+    const high = { session: { percent: 95, resetsAt: new Date(now + 7 * MIN) }, weekly: { percent: 4, resetsAt: new Date(now + DAY) } };
+    const view = buildView({ ...base, usage: high }, { ...compact, windows: 'weekly' }, icon, now);
+    expect(view.level).toBe('ok');
+    expect(view.tooltip).not.toContain('Session');
+  });
+
+  it('colors with custom thresholds', () => {
+    const view = buildView({ ...base, usage }, { ...compact, thresholds: { warning: 20, critical: 30 } }, icon, now);
+    expect(view.level).toBe('critical');
+  });
+
   it('hides the spend when showSpend is off', () => {
-    const view = buildView({ ...base, usage: { ...usage, spend } }, { extended: false, showSpend: false }, icon, now);
+    const view = buildView({ ...base, usage: { ...usage, spend } }, { ...compact, showSpend: false }, icon, now);
     expect(view.text).not.toContain('Credits');
     expect(view.tooltip).not.toContain('Monthly Credits');
   });
 
   it('does not look like an error when only the spend exists and it is hidden', () => {
-    const view = buildView({ ...base, usage: { spend } }, { extended: false, showSpend: false }, icon, now);
+    const view = buildView({ ...base, usage: { spend } }, { ...compact, showSpend: false }, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage · spend hidden');
   });
 

@@ -2,7 +2,7 @@
   "name": "claude-usage-vscode",
   "displayName": "Claude Usage for VS Code",
   "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar, and the monthly spend on accounts billed by money.",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "publisher": "alexlora87",
   "icon": "resources/icon.png",
   "license": "MIT",
@@ -31,6 +31,22 @@
       {
         "command": "claudeUsage.refresh",
         "title": "Claude Usage: Refresh"
+      },
+      {
+        "command": "claudeUsage.showHistory",
+        "title": "Claude Usage: Show History"
+      },
+      {
+        "command": "claudeUsage.showMenu",
+        "title": "Claude Usage: Show Menu"
+      },
+      {
+        "command": "claudeUsage.toggleExtendedView",
+        "title": "Claude Usage: Toggle Extended View"
+      },
+      {
+        "command": "claudeUsage.openSettings",
+        "title": "Claude Usage: Open Settings"
       }
     ],
     "keybindings": [
@@ -64,6 +80,36 @@
           ],
           "default": "auto",
           "description": "Monthly spend, for accounts billed by money instead of by usage window."
+        },
+        "claudeUsage.windows": {
+          "type": "string",
+          "enum": ["both", "session", "weekly"],
+          "enumDescriptions": [
+            "Show the 5-hour session and the 7-day window.",
+            "Show only the 5-hour session.",
+            "Show only the 7-day window."
+          ],
+          "default": "both",
+          "description": "Which usage windows the status bar, the notifications and the history show."
+        },
+        "claudeUsage.notifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a notification once per window cycle when usage reaches the warning or the critical threshold."
+        },
+        "claudeUsage.warningThreshold": {
+          "type": "number",
+          "default": 70,
+          "minimum": 1,
+          "maximum": 99,
+          "description": "Percentage from which the status bar turns yellow. Must be lower than the critical threshold."
+        },
+        "claudeUsage.criticalThreshold": {
+          "type": "number",
+          "default": 90,
+          "minimum": 2,
+          "maximum": 100,
+          "description": "Percentage from which the status bar turns red."
         }
       }
     },

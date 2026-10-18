@@ -1,28 +1,39 @@
 import type { ViewState } from '../engine/scheduler';
+import type { Forecasts } from './forecast';
 import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
 
-const WARNING_AT = 70;
-const CRITICAL_AT = 90;
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-export function levelFor(percent: number): Level {
-  if (percent >= CRITICAL_AT) {
+export interface Thresholds {
+  warning: number;
+  critical: number;
+}
+
+export const DEFAULT_THRESHOLDS: Thresholds = { warning: 70, critical: 90 };
+
+/** Uses the configured thresholds only when they are ordered; otherwise the defaults. */
+export function thresholdsFrom(warning: number, critical: number): Thresholds {
+  return warning > 0 && warning < critical && critical <= 100 ? { warning, critical } : DEFAULT_THRESHOLDS;
+}
+
+export function levelFor(percent: number, thresholds: Thresholds = DEFAULT_THRESHOLDS): Level {
+  if (percent >= thresholds.critical) {
     return 'critical';
   }
-  return percent >= WARNING_AT ? 'warning' : 'ok';
+  return percent >= thresholds.warning ? 'warning' : 'ok';
 }
 
 /** Worst level across the available windows and the monthly spend. */
-export function worstLevel(usage: Usage): Level {
+export function worstLevel(usage: Usage, thresholds: Thresholds = DEFAULT_THRESHOLDS): Level {
   if (usage.spend?.limitReached) {
     return 'critical';
   }
   const percents = [usage.session, usage.weekly, usage.spend].flatMap((w) => (w ? [w.percent] : []));
-  return levelFor(Math.max(0, ...percents));
+  return levelFor(Math.max(0, ...percents), thresholds);
 }
 
 /** `$7.29`; falls back to `7.29 XYZ` for codes Intl does not know. */
@@ -88,20 +99,30 @@ export function formatResetTime(date: Date, now: number): string {
   return `${day} at ${time}`;
 }
 
+/** `At this pace` line for a window that would fill up before it resets. */
+function paceLine(label: string, reachesAt: number | undefined, now: number): string[] {
+  return reachesAt !== undefined && reachesAt > now ? [`${label} · at this pace, 100% in ~${formatRemaining(reachesAt - now, true)}`] : [];
+}
+
 /** Markdown for the hover: one line per window, joined with a hard line break. */
-export function formatTooltip(usage: Usage, now: number): string | undefined {
+export function formatTooltip(usage: Usage, now: number, forecasts: Forecasts = {}): string | undefined {
   const lines: string[] = [];
   if (usage.session?.resetsAt) {
     lines.push(`Session (5hr) · resets ${formatResetTime(usage.session.resetsAt, now)}`);
+    lines.push(...paceLine('Session (5hr)', forecasts.session, now));
   }
   if (usage.weekly?.resetsAt) {
     lines.push(`Weekly (7 day) · resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
+    lines.push(...paceLine('Weekly (7 day)', forecasts.weekly, now));
   }
   if (usage.spend) {
     const { used, limit, currency, percent, limitReached } = usage.spend;
     const remaining = formatMoney(Math.max(0, limit - used), currency);
     lines.push(`Monthly Credits · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
     lines.push(`${remaining} remaining · ${percent.toFixed(1)}% used`);
+    if (forecasts.spend !== undefined && forecasts.spend > now && !limitReached) {
+      lines.push(`At this pace, the limit is reached in ~${formatRemaining(forecasts.spend - now, true)}`);
+    }
   }
   return lines.length ? lines.join('  \n') : undefined;
 }
@@ -123,9 +144,23 @@ export interface StatusView {
 
 export const PREFIX = '$(sparkle) Claude Usage';
 
+export type WindowsOption = 'both' | 'session' | 'weekly';
+
 export interface ViewOptions {
   extended: boolean;
   showSpend: boolean;
+  windows: WindowsOption;
+  thresholds: Thresholds;
+  forecasts?: Forecasts;
+}
+
+/** The usage the settings let the user see: selected windows, and the spend unless hidden. */
+export function visibleUsage(usage: Usage, options: Pick<ViewOptions, 'windows' | 'showSpend'>): Usage {
+  return {
+    session: options.windows === 'weekly' ? undefined : usage.session,
+    weekly: options.windows === 'session' ? undefined : usage.weekly,
+    spend: options.showSpend ? usage.spend : undefined,
+  };
 }
 
 /** Builds everything the status bar shows from the current state. */
@@ -138,7 +173,7 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
     return { text: `${PREFIX}: loading…`, level: 'ok' };
   }
 
-  const usage: Usage = options.showSpend ? state.usage : { ...state.usage, spend: undefined };
+  const usage = visibleUsage(state.usage, options);
   const { session, weekly, spend } = usage;
   const parts: string[] = [];
   if (session) {
@@ -163,10 +198,10 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
   }
 
   const body = parts.length ? parts.join(' | ') : state.usage.spend ? 'spend hidden' : 'no data';
-  const tooltip = [formatTooltip(usage, now), state.stale ? errorTooltip(state, now) : undefined]
+  const tooltip = [formatTooltip(usage, now, options.forecasts), state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
-  return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage) };
+  return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage, options.thresholds) };
 }
 
 function errorTooltip(state: ViewState, now: number): string | undefined {
