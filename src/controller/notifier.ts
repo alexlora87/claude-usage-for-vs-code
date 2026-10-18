@@ -43,10 +43,10 @@ export function crossings(usage: Usage, thresholds: Thresholds, now: number): Cr
       `Your 7-day window is at ${Math.round(weekly.percent)}%.${resets(weekly.resetsAt, true)}`, false, weekly.resetsAt);
   }
   if (spend) {
-    // The API gives no reset date for the spend: the calendar month only deduplicates, it is never shown.
+    // The API gives no reset date for the spend: the UTC calendar month only deduplicates, it is never shown.
     const month = new Date(now);
     const amounts = `${formatMoney(spend.used, spend.currency)} of ${formatMoney(spend.limit, spend.currency)}`;
-    add('spend', spend.percent, `${month.getFullYear()}-${month.getMonth() + 1}`,
+    add('spend', spend.percent, `${month.getUTCFullYear()}-${month.getUTCMonth() + 1}`,
       spend.limitReached ? `Monthly credits limit reached (${amounts}).` : `Monthly credits at ${Math.round(spend.percent)}% (${amounts}).`,
       spend.limitReached);
   }
@@ -94,13 +94,19 @@ export function claimCrossing(dir: string, account: string, crossing: Crossing):
 
 /** Removes the markers of cycles that are over. */
 export function pruneMarkers(dir: string, now: number): void {
+  let names: string[];
   try {
-    for (const name of readdirSync(dir)) {
-      if (name.startsWith(MARKER_PREFIX) && now - statSync(join(dir, name)).mtimeMs > MARKER_TTL_MS) {
+    names = readdirSync(dir);
+  } catch {
+    return; // No directory yet: nothing to clean.
+  }
+  for (const name of names.filter((n) => n.startsWith(MARKER_PREFIX))) {
+    try {
+      if (now - statSync(join(dir, name)).mtimeMs > MARKER_TTL_MS) {
         unlinkSync(join(dir, name));
       }
+    } catch {
+      // Removed by another window meanwhile: carry on with the rest.
     }
-  } catch {
-    // Missing directory or a marker removed by another window: nothing to clean.
   }
 }

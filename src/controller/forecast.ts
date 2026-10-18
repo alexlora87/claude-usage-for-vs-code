@@ -9,7 +9,8 @@ const CYCLE_TOLERANCE_MS = 2 * MINUTE;
 const RESET_DROP = 5;
 const MIN_SAMPLES = 3;
 const SPEND_MIN_SPAN_MS = 24 * HOUR;
-const MAX_SPEND_ETA_MS = 90 * 24 * HOUR;
+/** The monthly limit resets, so a projection beyond a month never happens. */
+const MAX_SPEND_ETA_MS = 31 * 24 * HOUR;
 
 /** Moments (ms since epoch) at which, at the current pace, a window or the monthly limit is reached. */
 export interface Forecasts {

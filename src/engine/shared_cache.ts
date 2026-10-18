@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Spend, Usage, UsageErrorKind } from '../shared/types';
 
@@ -64,13 +64,18 @@ export class SharedCache {
 
   write(patch: Partial<CacheData>): void {
     this.memory = { ...this.read(), ...patch };
+    const temp = `${this.path}.${randomBytes(6).toString('hex')}.tmp`;
     try {
       mkdirSync(join(this.path, '..'), { recursive: true, mode: 0o700 });
-      const temp = `${this.path}.${randomBytes(6).toString('hex')}.tmp`;
       writeFileSync(temp, JSON.stringify(this.memory), { flag: 'wx', mode: 0o600 });
       renameSync(temp, this.path);
     } catch {
       // Sharing is an optimization; a failed write must not break the extension.
+      try {
+        unlinkSync(temp);
+      } catch {
+        // The temporary file was never created.
+      }
     }
   }
 }

@@ -58,10 +58,16 @@ describe('spend forecast', () => {
   const usage = (used: number) => ({ spend: { used, limit: 800, currency: 'USD', percent: used / 8, limitReached: false } });
 
   it('projects when the monthly limit is reached', () => {
-    // $10 per day, $140 now: $660 left -> 66 days.
+    // $30 per day, $220 now: $580 left -> 19 days.
+    const samples = [0, 1, 2, 3].map((i) => spendSample(now - (4 - i) * day, 100 + i * 30));
+    const { spend } = computeForecasts(samples, usage(220), now);
+    expect(Math.round((spend! - now) / day)).toBe(19);
+  });
+
+  it('says nothing when the limit would be reached after the month ends', () => {
+    // $10 per day, $140 now: 66 days.
     const samples = [0, 1, 2, 3].map((i) => spendSample(now - (4 - i) * day, 100 + i * 10));
-    const { spend } = computeForecasts(samples, usage(140), now);
-    expect(Math.round((spend! - now) / day)).toBe(66);
+    expect(computeForecasts(samples, usage(140), now).spend).toBeUndefined();
   });
 
   it('needs at least a day of history', () => {
@@ -72,7 +78,7 @@ describe('spend forecast', () => {
   it('starts counting after the spend dropped (new month)', () => {
     const samples = [spendSample(now - 5 * day, 700), spendSample(now - 3 * day, 2), spendSample(now - 2 * day, 4), spendSample(now - day, 6)];
     const { spend } = computeForecasts(samples, usage(8), now);
-    // $2 per day from $8: $792 left -> 396 days, beyond the 90-day cap.
+    // $2 per day from $8: $792 left -> 396 days, beyond the month.
     expect(spend).toBeUndefined();
     const fast = [spendSample(now - 5 * day, 700), spendSample(now - 3 * day, 20), spendSample(now - 2 * day, 60), spendSample(now - day, 100)];
     expect(computeForecasts(fast, usage(140), now).spend).toBeDefined();

@@ -80,11 +80,13 @@ export function renderHistoryHtml(samples: Sample[], now: number, nonce: string,
     .map((p) => `<line class="grid" x1="${PLOT.left}" x2="${WIDTH - PLOT.right}" y1="${y(p)}" y2="${y(p)}"/><text class="axis" x="${PLOT.left - 6}" y="${y(p) + 4}" text-anchor="end">${p}%</text>`)
     .join('');
 
-  const firstDay = new Date(now - RANGE_MS);
-  firstDay.setHours(24, 0, 0, 0);
+  // Calendar days, not 24-hour steps: a daylight saving change would shift the labels by an hour.
+  const midnight = new Date(now - RANGE_MS);
+  midnight.setHours(24, 0, 0, 0);
   const days: string[] = [];
-  for (let t = firstDay.getTime(); t <= now; t += DAY) {
-    const label = new Date(t).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+  for (; midnight.getTime() <= now; midnight.setDate(midnight.getDate() + 1)) {
+    const t = midnight.getTime();
+    const label = midnight.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
     days.push(`<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${PLOT.top}" y2="${HEIGHT - PLOT.bottom}"/><text class="axis" x="${x(t)}" y="${HEIGHT - 8}" text-anchor="middle">${escapeHtml(label)}</text>`);
   }
 

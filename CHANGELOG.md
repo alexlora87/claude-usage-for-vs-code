@@ -2,11 +2,18 @@
 
 ## 1.0.0
 
+### Added
+
 - Click the status bar item for a menu (refresh, extended view, history, settings). `Ctrl+Alt+U` still refreshes directly.
 - Notification once per window cycle when usage reaches the warning or critical threshold (`claudeUsage.notifications`).
 - The hover projects when a window or the monthly limit fills up at the current pace.
 - **Claude Usage: Show History** shows a chart of the last 7 days. Readings are kept locally for 30 days.
 - Settings `claudeUsage.windows`, `claudeUsage.warningThreshold` and `claudeUsage.criticalThreshold`. `windows` also decides which windows color the bar, notify and appear in the history.
+
+### Fixed
+
+- A manual refresh pressed while a request was in flight was ignored; it now runs right after that request.
+- A failed write of the shared cache left a temporary file in the extension storage.
 
 ## 0.2.1
 

@@ -78,17 +78,31 @@ export function historyFile(storageDir: string, configDir: string): string {
 export class History {
   constructor(private readonly path: string) {}
 
-  read(): Sample[] {
+  /** Undefined when the file exists but cannot be read now, so it is not overwritten with a shorter history. */
+  private load(): Sample[] | undefined {
+    let text: string;
     try {
-      return reviveSamples(JSON.parse(readFileSync(this.path, 'utf8')));
-    } catch {
-      return [];
+      text = readFileSync(this.path, 'utf8');
+    } catch (e) {
+      return (e as NodeJS.ErrnoException).code === 'ENOENT' ? [] : undefined;
     }
+    try {
+      return reviveSamples(JSON.parse(text));
+    } catch {
+      return []; // Corrupted: start over.
+    }
+  }
+
+  read(): Sample[] {
+    return this.load() ?? [];
   }
 
   /** Stores the reading and returns all the samples. */
   record(usage: Usage, t: number): Sample[] {
-    const before = this.read();
+    const before = this.load();
+    if (!before) {
+      return [];
+    }
     const after = appendSample(before, usage, t);
     if (after === before) {
       return before;

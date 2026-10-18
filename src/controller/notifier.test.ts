@@ -26,6 +26,12 @@ describe('crossings', () => {
     expect(result[1].message).toBe('Your 7-day window is at 72%. Resets in 2d 0h.');
   });
 
+  it('keys the monthly spend by UTC month, whatever the time zone', () => {
+    const key = (t: number) => crossings({ spend }, DEFAULT_THRESHOLDS, t)[0].cycleKey;
+    expect(key(Date.UTC(2026, 9, 31, 23, 30))).toBe('2026-10');
+    expect(key(Date.UTC(2026, 10, 1, 0, 30))).toBe('2026-11');
+  });
+
   it('skips a cycle that already ended', () => {
     expect(crossings({ session: { percent: 95, resetsAt: new Date(now - MIN) } }, DEFAULT_THRESHOLDS, now)).toEqual([]);
   });

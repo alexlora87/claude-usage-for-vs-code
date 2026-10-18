@@ -29,8 +29,8 @@ function notify(storageDir: string, account: string, usage: Usage, now: number):
   const options = readOptions();
   for (const crossing of crossings(visibleUsage(usage, options), options.thresholds, now)) {
     if (claimCrossing(storageDir, account, crossing)) {
-      const show = crossing.level === 'critical' ? vscode.window.showErrorMessage : vscode.window.showWarningMessage;
-      void show(`Claude Usage: ${crossing.message}`);
+      const text = `Claude Usage: ${crossing.message}`;
+      void (crossing.level === 'critical' ? vscode.window.showErrorMessage(text) : vscode.window.showWarningMessage(text));
     }
   }
 }
@@ -52,10 +52,13 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   let busy = false;
+  let forcedWhileBusy = false;
   let recordedAt: number | undefined;
   let forecasts: Forecasts = {};
   const tick = async (force = false) => {
     if (busy) {
+      // A manual refresh must not be lost: it runs as soon as the current request ends.
+      forcedWhileBusy ||= force;
       return;
     }
     busy = true;
@@ -71,6 +74,10 @@ export function activate(context: vscode.ExtensionContext): void {
       statusBar.update(state, forecasts);
     } finally {
       busy = false;
+    }
+    if (forcedWhileBusy) {
+      forcedWhileBusy = false;
+      await tick(true);
     }
   };
 

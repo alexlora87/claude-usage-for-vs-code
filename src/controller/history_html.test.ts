@@ -52,6 +52,24 @@ describe('renderHistoryHtml', () => {
     expect(html).not.toContain('<polyline class="session"');
   });
 
+  it('labels each day once across a daylight saving change', () => {
+    const zone = process.env.TZ;
+    process.env.TZ = 'Europe/Madrid';
+    try {
+      const html = renderHistoryHtml([], Date.UTC(2026, 9, 28, 12), 'abc');
+      expect(html).toContain('No history yet');
+      const withData = renderHistoryHtml([{ t: Date.UTC(2026, 9, 28, 11), session: { percent: 5, resetsAt: Date.UTC(2026, 9, 28, 15) } }], Date.UTC(2026, 9, 28, 12), 'abc');
+      const labels = [...withData.matchAll(/text-anchor="middle">([^<]+)</g)].map((m) => m[1]);
+      expect(labels).toEqual(['Thu 22', 'Fri 23', 'Sat 24', 'Sun 25', 'Mon 26', 'Tue 27', 'Wed 28']);
+    } finally {
+      if (zone === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = zone;
+      }
+    }
+  });
+
   it('says there is no history yet', () => {
     expect(renderHistoryHtml([], now, 'abc')).toContain('No history yet');
   });

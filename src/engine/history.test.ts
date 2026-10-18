@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -69,6 +69,13 @@ describe('History', () => {
 
   it('uses a different file per account', () => {
     expect(historyFile(dir, '/a')).not.toBe(historyFile(dir, '/b'));
+  });
+
+  it('does not write when the file exists but cannot be read', () => {
+    const path = historyFile(dir, '/a');
+    mkdirSync(path);
+    expect(new History(path).record(usage, 1000)).toEqual([]);
+    expect(readdirSync(dir)).toEqual([path.slice(dir.length + 1)]);
   });
 
   it('reads an empty history when the file is missing or corrupted', () => {
