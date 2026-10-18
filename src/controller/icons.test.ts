@@ -58,8 +58,8 @@ describe('iconStyleFrom', () => {
     expect(iconStyleFrom('bar', 'large')).toBe('bar-large');
   });
 
-  it('falls back to the small bar for an unknown size', () => {
-    expect(iconStyleFrom('bar', 'xyz')).toBe('bar-small');
-    expect(iconStyleFrom('bar', '')).toBe('bar-small');
+  it('falls back to the medium bar for an unknown size', () => {
+    expect(iconStyleFrom('bar', 'xyz')).toBe('bar-medium');
+    expect(iconStyleFrom('bar', '')).toBe('bar-medium');
   });
 });

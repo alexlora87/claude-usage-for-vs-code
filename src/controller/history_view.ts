@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import * as vscode from 'vscode';
 import { Sample } from '../engine/history';
 import { renderHistoryHtml, SeriesKey } from './history_html';
-import { readOptions } from './settings';
+import { readChartSize, readOptions } from './settings';
 
 /** The history panel: a static page without scripts, rebuilt when a new reading arrives. */
 export class HistoryView implements vscode.Disposable {
@@ -52,7 +52,7 @@ export class HistoryView implements vscode.Disposable {
       if (showSpend) {
         allowed.push('spend');
       }
-      this.panel.webview.html = renderHistoryHtml(this.readSamples(), Date.now(), randomBytes(16).toString('base64'), allowed);
+      this.panel.webview.html = renderHistoryHtml(this.readSamples(), Date.now(), randomBytes(16).toString('base64'), allowed, readChartSize());
     }
   }
 

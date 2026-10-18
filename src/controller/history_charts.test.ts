@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Sample } from '../engine/history';
-import { cycles, escapeHtml, renderPanels, runsOf, spendRuns } from './history_charts';
+import { chartSizeFrom, cycles, escapeHtml, renderPanels, runsOf, spendRuns } from './history_charts';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -175,11 +175,40 @@ describe('spend panel and the allowed panels', () => {
     expect(titles).toEqual(['Sessions (5hr)', 'Weekly (7 day)', 'Monthly Credits']);
   });
 
+  it('labels the percent axis from 0 to 100 with the step of each size', () => {
+    const labels = (size: 'small' | 'medium' | 'large') =>
+      [...renderPanels([session(now - 5 * MIN, 10, now + HOUR)], now, ['session'], size).matchAll(/text-anchor="end">([^<]+)</g)].map((m) => m[1]);
+    expect(labels('small')).toEqual(['0%', '25%', '50%', '75%', '100%']);
+    expect(labels('medium')).toEqual(['0%', '20%', '40%', '60%', '80%', '100%']);
+    expect(labels('large')).toEqual(['0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%']);
+  });
+
+  it('makes the panels taller with the size, and medium is the default', () => {
+    const viewBox = (size?: 'small' | 'medium' | 'large') => renderPanels([session(now - 5 * MIN, 10, now + HOUR)], now, ['session'], size).match(/viewBox="0 0 720 (\d+)"/)![1];
+    expect([viewBox('small'), viewBox('medium'), viewBox('large')]).toEqual(['190', '260', '320']);
+    expect(viewBox()).toBe('260');
+  });
+
+  it('keeps the bars and the pace inside the taller panels', () => {
+    const html = renderPanels([session(now - 5 * MIN, 100, now + HOUR)], now, ['session'], 'large');
+    const [, y, , height] = html.match(/<rect class="bar hot" x="[\d.]+" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/)!;
+    expect(Number(y) + Number(height)).toBeLessThanOrEqual(320 - 28);
+  });
+
   it('draws only the allowed panels', () => {
     const html = renderPanels(samples, now, ['session']);
     expect(html).toContain('Sessions (5hr)');
     expect(html).not.toContain('Weekly (7 day)');
     expect(html).not.toContain('Monthly Credits');
+  });
+});
+
+describe('chartSizeFrom', () => {
+  it('knows the three sizes and falls back to medium', () => {
+    expect(['small', 'medium', 'large'].map(chartSizeFrom)).toEqual(['small', 'medium', 'large']);
+    expect(chartSizeFrom('huge')).toBe('medium');
+    expect(chartSizeFrom('toString')).toBe('medium');
+    expect(chartSizeFrom('')).toBe('medium');
   });
 });
 

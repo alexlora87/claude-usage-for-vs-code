@@ -116,7 +116,7 @@
             "A longer bar.",
             "The longest bar."
           ],
-          "default": "small",
+          "default": "medium",
           "description": "Length of the progress bar. Only used when the indicator is bar."
         },
         "claudeUsage.showSpend": {
@@ -154,6 +154,22 @@
           "minimum": 2,
           "maximum": 100,
           "description": "Percentage from which the status bar turns red."
+        },
+        "claudeUsage.historyChartSize": {
+          "order": 10,
+          "type": "string",
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "enumDescriptions": [
+            "Short panels, with a line on the percent axis every 25 points.",
+            "Taller panels, with a line every 20 points.",
+            "The tallest panels, with a line every 10 points."
+          ],
+          "default": "medium",
+          "description": "Size of the panels of Claude Usage: Show History."
         }
       }
     },

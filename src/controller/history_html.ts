@@ -1,10 +1,10 @@
 import { Sample } from '../engine/history';
-import { renderPanels, SeriesKey } from './history_charts';
+import { ChartSize, renderPanels, SeriesKey } from './history_charts';
 
 export type { SeriesKey } from './history_charts';
 
-export function renderHistoryHtml(samples: Sample[], now: number, nonce: string, allowed: SeriesKey[] = ['session', 'weekly', 'spend']): string {
-  const panels = renderPanels(samples, now, allowed);
+export function renderHistoryHtml(samples: Sample[], now: number, nonce: string, allowed: SeriesKey[] = ['session', 'weekly', 'spend'], size: ChartSize = 'medium'): string {
+  const panels = renderPanels(samples, now, allowed, size);
   const body = panels || '<p>No history yet. It fills up as the extension reads your usage.</p>';
 
   return `<!DOCTYPE html>
@@ -20,7 +20,8 @@ h1 { font-size: 1.3em; font-weight: 600; margin: 0 0 4px; }
 h2 { font-size: 1.05em; font-weight: 600; margin: 24px 0 2px; }
 .sub { color: var(--vscode-descriptionForeground); margin: 0 0 8px; }
 svg { width: 100%; max-width: 900px; height: auto; }
-.grid { stroke: var(--vscode-editorWidget-border, #8884); stroke-width: 1; }
+.grid { stroke: var(--vscode-editorWidget-border, #8884); stroke-width: 1; opacity: 0.6; }
+.grid.major { opacity: 1; }
 .axis { fill: var(--vscode-descriptionForeground); font-size: 11px; }
 polyline { fill: none; stroke-width: 2; stroke-linejoin: round; }
 circle { fill: transparent; }
