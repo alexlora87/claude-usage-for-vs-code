@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0
+
+### Changed
+
+- **Claude Usage: Show History** shows separate panels instead of one chart: Sessions (5hr), Weekly (7 day) and Monthly Credits (only for accounts with spend), in that order. The single chart that mixed both windows is gone.
+- Sessions: one bar per session of the last 7 days, with the most it reached (red from 90 %).
+- Weekly: the current cycle, from its start to its reset, against an even pace, with a mark for now and the projection (where it is on pace to end, or in red when it would fill up before the reset). Readings more than 30 minutes apart are joined with a dotted line, and a cycle that has already ended is shown as the last one.
+- Monthly Credits: as before, a line over the last 7 days.
+
 ## 1.2.0
 
 ### Added
