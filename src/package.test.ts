@@ -25,6 +25,7 @@ describe('settings schema', () => {
       'notifications',
       'warningThreshold',
       'criticalThreshold',
+      'historyChartSize',
     ]);
   });
 });

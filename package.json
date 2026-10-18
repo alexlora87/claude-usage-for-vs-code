@@ -2,7 +2,7 @@
   "name": "claude-usage-vscode",
   "displayName": "Claude Usage for VS Code",
   "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar, and the monthly spend on accounts billed by money.",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "publisher": "alexlora87",
   "icon": "resources/icon.png",
   "license": "MIT",
@@ -116,7 +116,7 @@
             "A longer bar.",
             "The longest bar."
           ],
-          "default": "small",
+          "default": "medium",
           "description": "Length of the progress bar. Only used when the indicator is bar."
         },
         "claudeUsage.showSpend": {
@@ -154,6 +154,22 @@
           "minimum": 2,
           "maximum": 100,
           "description": "Percentage from which the status bar turns red."
+        },
+        "claudeUsage.historyChartSize": {
+          "order": 10,
+          "type": "string",
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "enumDescriptions": [
+            "Short panels, with a line on the percent axis every 25 points.",
+            "Taller panels, with a line every 20 points.",
+            "The tallest panels, with a line every 10 points."
+          ],
+          "default": "medium",
+          "description": "Size of the panels of Claude Usage: Show History."
         }
       }
     },

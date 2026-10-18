@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1
+
+### Added
+
+- `claudeUsage.historyChartSize` setting: `small`, `medium` (default) or `large`, the size of the panels of **Claude Usage: Show History**. The percent axis has a line every 25, 20 or 10 points.
+
+### Changed
+
+- The history panels are taller by default (260 px instead of 190), and the percent axis has a line every 20 points instead of every 25.
+- `claudeUsage.barSize` defaults to `medium` (it was `small`).
+
 ## 1.3.0
 
 ### Changed

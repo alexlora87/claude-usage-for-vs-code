@@ -15,8 +15,26 @@ const HOVER_EVERY_MS = 30 * MINUTE;
 const HOT_AT = 90;
 
 const WIDTH = 720;
-const HEIGHT = 190;
 const PLOT = { left: 40, right: 12, top: 12, bottom: 28 };
+
+export type ChartSize = 'small' | 'medium' | 'large';
+
+/** Height of a panel, and every how many points the percent axis has a line and a label. */
+interface Layout {
+  height: number;
+  step: number;
+}
+
+const LAYOUTS: Record<ChartSize, Layout> = {
+  small: { height: 190, step: 25 },
+  medium: { height: 260, step: 20 },
+  large: { height: 320, step: 10 },
+};
+
+/** The size a setting value asks for; anything unknown gets the medium one. */
+export function chartSizeFrom(value: string): ChartSize {
+  return (['small', 'medium', 'large'] as const).find((size) => size === value) ?? 'medium';
+}
 
 export type SeriesKey = 'session' | 'weekly' | 'spend';
 
@@ -101,12 +119,14 @@ export function runsOf<T extends Reading>(points: T[]): T[][] {
 interface Scale {
   x(t: number): number;
   y(percent: number): number;
+  layout: Layout;
 }
 
-function scale(start: number, end: number): Scale {
+function scale(start: number, end: number, layout: Layout): Scale {
   return {
     x: (t) => PLOT.left + ((t - start) / (end - start)) * (WIDTH - PLOT.left - PLOT.right),
-    y: (percent) => PLOT.top + (1 - Math.min(100, Math.max(0, percent)) / 100) * (HEIGHT - PLOT.top - PLOT.bottom),
+    y: (percent) => PLOT.top + (1 - Math.min(100, Math.max(0, percent)) / 100) * (layout.height - PLOT.top - PLOT.bottom),
+    layout,
   };
 }
 
@@ -114,8 +134,9 @@ const f = (n: number) => n.toFixed(1);
 
 /** Percent grid, and one line per calendar day between `start` and `end`. */
 function axes(s: Scale, start: number, end: number): string {
-  const grid = [0, 25, 50, 75, 100]
-    .map((p) => `<line class="grid" x1="${PLOT.left}" x2="${WIDTH - PLOT.right}" y1="${f(s.y(p))}" y2="${f(s.y(p))}"/><text class="axis" x="${PLOT.left - 6}" y="${f(s.y(p) + 4)}" text-anchor="end">${p}%</text>`)
+  const { height, step } = s.layout;
+  const grid = Array.from({ length: Math.floor(100 / step) + 1 }, (_, i) => i * step)
+    .map((p) => `<line class="grid${p % 50 === 0 ? ' major' : ''}" x1="${PLOT.left}" x2="${WIDTH - PLOT.right}" y1="${f(s.y(p))}" y2="${f(s.y(p))}"/><text class="axis" x="${PLOT.left - 6}" y="${f(s.y(p) + 4)}" text-anchor="end">${p}%</text>`)
     .join('');
   // Calendar days, not 24-hour steps: a daylight saving change would shift the labels by an hour.
   const midnight = new Date(start);
@@ -124,7 +145,7 @@ function axes(s: Scale, start: number, end: number): string {
   for (; midnight.getTime() <= end; midnight.setDate(midnight.getDate() + 1)) {
     const t = midnight.getTime();
     const label = midnight.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
-    days.push(`<line class="grid" x1="${f(s.x(t))}" x2="${f(s.x(t))}" y1="${PLOT.top}" y2="${HEIGHT - PLOT.bottom}"/><text class="axis" x="${f(s.x(t))}" y="${HEIGHT - 8}" text-anchor="middle">${escapeHtml(label)}</text>`);
+    days.push(`<line class="grid" x1="${f(s.x(t))}" x2="${f(s.x(t))}" y1="${PLOT.top}" y2="${height - PLOT.bottom}"/><text class="axis" x="${f(s.x(t))}" y="${height - 8}" text-anchor="middle">${escapeHtml(label)}</text>`);
   }
   return grid + days.join('');
 }
@@ -153,12 +174,12 @@ function hoverDots(css: string, run: Reading[], s: Scale, label: string): string
     .join('');
 }
 
-function panel(title: string, note: string, svg: string, legend: string): string {
-  return `<section><h2>${escapeHtml(title)}</h2><p class="sub">${escapeHtml(note)}</p><svg viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-label="${escapeHtml(title)}">${svg}</svg><p class="legend">${legend}</p></section>`;
+function panel(title: string, note: string, svg: string, legend: string, height: number): string {
+  return `<section><h2>${escapeHtml(title)}</h2><p class="sub">${escapeHtml(note)}</p><svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-label="${escapeHtml(title)}">${svg}</svg><p class="legend">${legend}</p></section>`;
 }
 
 /** The current weekly cycle against an even pace, with where it is on pace to end. */
-function weeklyPanel(samples: Sample[], now: number): string {
+function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
   const cycle = cycles(samples, 'weekly').reduce<Cycle | undefined>((latest, c) => (!latest || c.end > latest.end ? c : latest), undefined);
   if (!cycle || cycle.end < now - RANGE_MS) {
     return '';
@@ -168,7 +189,7 @@ function weeklyPanel(samples: Sample[], now: number): string {
   if (!points.length) {
     return '';
   }
-  const s = scale(cycle.start, cycle.end);
+  const s = scale(cycle.start, cycle.end, layout);
   const last = points[points.length - 1];
   const runs = runsOf(points);
 
@@ -195,20 +216,20 @@ function weeklyPanel(samples: Sample[], now: number): string {
     note += ' · at this pace it fills up before the reset';
   }
 
-  const nowLine = now > cycle.start && now < cycle.end ? `<line class="now" x1="${f(s.x(now))}" x2="${f(s.x(now))}" y1="${PLOT.top}" y2="${HEIGHT - PLOT.bottom}"/>` : '';
+  const nowLine = now > cycle.start && now < cycle.end ? `<line class="now" x1="${f(s.x(now))}" x2="${f(s.x(now))}" y1="${PLOT.top}" y2="${layout.height - PLOT.bottom}"/>` : '';
   const pace = segment('pace', [s.x(cycle.start), s.y(0)], [s.x(cycle.end), s.y(100)]);
   const legend = '<span class="swatch weekly-bg"></span>Usage <span class="swatch pace-bg"></span>Even pace <span class="swatch projection-bg"></span>Projection';
-  return panel('Weekly (7 day)', note, axes(s, cycle.start, cycle.end) + pace + nowLine + drawn + projection, legend);
+  return panel('Weekly (7 day)', note, axes(s, cycle.start, cycle.end) + pace + nowLine + drawn + projection, legend, layout.height);
 }
 
 /** One bar per session of the last 7 days: the most it reached. */
-function sessionPanel(samples: Sample[], now: number): string {
+function sessionPanel(samples: Sample[], now: number, layout: Layout): string {
   const sessions = cycles(samples, 'session').filter((c) => c.end >= now - RANGE_MS);
   if (!sessions.length) {
     return '';
   }
   const start = now - RANGE_MS;
-  const s = scale(start, now);
+  const s = scale(start, now, layout);
   const bars = sessions
     .map((c) => {
       const x0 = s.x(Math.max(c.start, start)) + 1;
@@ -221,25 +242,26 @@ function sessionPanel(samples: Sample[], now: number): string {
     .join('');
   const full = sessions.filter((c) => c.peak >= HOT_AT).length;
   const legend = `<span class="swatch session-bg"></span>Peak of each session <span class="swatch hot-bg"></span>Reached ${HOT_AT}%`;
-  return panel('Sessions (5hr)', `Last 7 days · ${sessions.length} session${sessions.length === 1 ? '' : 's'}, ${full} at ${HOT_AT}% or more`, axes(s, start, now) + bars, legend);
+  return panel('Sessions (5hr)', `Last 7 days · ${sessions.length} session${sessions.length === 1 ? '' : 's'}, ${full} at ${HOT_AT}% or more`, axes(s, start, now) + bars, legend, layout.height);
 }
 
 /** The monthly spend over the last 7 days, cut at gaps and at a new month. */
-function spendPanel(samples: Sample[], now: number): string {
+function spendPanel(samples: Sample[], now: number, layout: Layout): string {
   const runs = spendRuns(samples, now);
   if (!runs.length) {
     return '';
   }
   const start = now - RANGE_MS;
-  const s = scale(start, now);
+  const s = scale(start, now, layout);
   const lines = runs.map((run) => runShape('spend', run, s) + hoverDots('spend', run, s, 'Monthly Credits')).join('');
-  return panel('Monthly Credits', 'Last 7 days', axes(s, start, now) + lines, '<span class="swatch spend-bg"></span>Share of the monthly limit');
+  return panel('Monthly Credits', 'Last 7 days', axes(s, start, now) + lines, '<span class="swatch spend-bg"></span>Share of the monthly limit', layout.height);
 }
 
-export function renderPanels(samples: Sample[], now: number, allowed: SeriesKey[]): string {
+export function renderPanels(samples: Sample[], now: number, allowed: SeriesKey[], size: ChartSize = 'medium'): string {
+  const layout = LAYOUTS[size];
   return [
-    allowed.includes('session') ? sessionPanel(samples, now) : '',
-    allowed.includes('weekly') ? weeklyPanel(samples, now) : '',
-    allowed.includes('spend') ? spendPanel(samples, now) : '',
+    allowed.includes('session') ? sessionPanel(samples, now, layout) : '',
+    allowed.includes('weekly') ? weeklyPanel(samples, now, layout) : '',
+    allowed.includes('spend') ? spendPanel(samples, now, layout) : '',
   ].join('');
 }

@@ -11,7 +11,7 @@ export function iconStyleFrom(indicator: string, barSize: string): IconStyle {
     return 'ring';
   }
   const style = `bar-${barSize}` as IconStyle;
-  return BAR_STYLES.includes(style) ? style : 'bar-small';
+  return BAR_STYLES.includes(style) ? style : 'bar-medium';
 }
 
 /** Glyph of the bundled icon font in the chosen style, rounded to the nearest 5%. */
