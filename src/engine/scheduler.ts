@@ -9,6 +9,8 @@ const FRESH_RATIO = 0.9;
 
 export interface ViewState {
   usage?: Usage;
+  /** When `usage` was fetched. */
+  fetchedAt?: number;
   /** The shown usage is older than expected because the last request failed. */
   stale: boolean;
   error?: { kind: UsageErrorKind; message: string };
@@ -26,10 +28,10 @@ export function deriveState(cache: CacheData, now: number): ViewState {
   const age = cache.fetchedAt === undefined ? Infinity : now - cache.fetchedAt;
   const retryAt = cache.cooldownUntil && cache.cooldownUntil > now ? cache.cooldownUntil : undefined;
   if (!cache.error) {
-    return { usage: cache.usage, stale: false, loading: !cache.usage };
+    return { usage: cache.usage, fetchedAt: cache.fetchedAt, stale: false, loading: !cache.usage };
   }
   if (cache.usage && age <= MAX_STALE_MS) {
-    return { usage: cache.usage, stale: true, error: cache.error, retryAt, loading: false };
+    return { usage: cache.usage, fetchedAt: cache.fetchedAt, stale: true, error: cache.error, retryAt, loading: false };
   }
   return { stale: false, error: cache.error, retryAt, loading: false };
 }
