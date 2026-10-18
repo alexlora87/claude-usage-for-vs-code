@@ -189,10 +189,22 @@ describe('spend panel and the allowed panels', () => {
     expect(viewBox()).toBe('260');
   });
 
-  it('keeps the bars and the pace inside the taller panels', () => {
-    const html = renderPanels([session(now - 5 * MIN, 100, now + HOUR)], now, ['session'], 'large');
-    const [, y, , height] = html.match(/<rect class="bar hot" x="[\d.]+" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/)!;
-    expect(Number(y) + Number(height)).toBeLessThanOrEqual(320 - 28);
+  it('scales the bars to the height of each size', () => {
+    // A session at 100 % fills the plot: the height minus the 12 px above and the 28 px below.
+    const bar = (size: 'small' | 'medium' | 'large') => {
+      const html = renderPanels([session(now - 5 * MIN, 100, now + HOUR)], now, ['session'], size);
+      const [, y, , height] = html.match(/<rect class="bar hot" x="[\d.]+" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/)!;
+      return [y, height];
+    };
+    expect(bar('small')).toEqual(['12.0', '150.0']);
+    expect(bar('medium')).toEqual(['12.0', '220.0']);
+    expect(bar('large')).toEqual(['12.0', '280.0']);
+  });
+
+  it('marks the lines of 0, 50 and 100 % that the axis has', () => {
+    const majors = (size: 'small' | 'medium' | 'large') =>
+      renderPanels([session(now - 5 * MIN, 10, now + HOUR)], now, ['session'], size).match(/class="grid major"/g)!.length;
+    expect([majors('small'), majors('medium'), majors('large')]).toEqual([3, 2, 3]);
   });
 
   it('draws only the allowed panels', () => {
