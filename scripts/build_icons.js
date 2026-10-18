@@ -55,7 +55,7 @@ const roundedRect = (x0, y0, x1, y1, radius, reverse = false) => {
     [x0 + radius, y0 + radius, 180],
   ];
   const points = corners.flatMap(([cx, cy, from]) =>
-    Array.from({ length: 9 }, (_, i) => {
+    Array.from({ length: 10 }, (_, i) => {
       const rad = ((from + i * 10) * Math.PI) / 180;
       return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
     }),
