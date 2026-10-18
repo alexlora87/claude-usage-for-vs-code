@@ -58,7 +58,7 @@ describe('session panel', () => {
 
   it('draws one bar per session with the most it reached', () => {
     const html = renderPanels(samples, now, [...all]);
-    expect(html.match(/<rect class="bar/g)).toHaveLength(2);
+    expect(html.match(/<rect class="bar(?: hot)?"/g)).toHaveLength(2);
     expect(html).toContain('peak 95%');
     expect(html).toContain('Session in progress · 30% so far');
   });
@@ -71,7 +71,7 @@ describe('session panel', () => {
 
   it('keeps every bar inside the plot, with some height', () => {
     const html = renderPanels([...samples, session(now - 6 * DAY, 0, now - 6 * DAY + 2 * HOUR), session(now - 7 * DAY - HOUR, 50, now - 7 * DAY + 2 * HOUR)], now, [...all]);
-    const bars = [...html.matchAll(/<rect class="bar[^"]*" x="([\d.]+)" y="[\d.]+" width="([\d.]+)" height="([\d.]+)"/g)];
+    const bars = [...html.matchAll(/<rect class="bar(?: hot)?" x="([\d.]+)" y="[\d.]+" width="([\d.]+)" height="([\d.]+)"/g)];
     // The two sessions above, one at 0 % and one that starts before the 7 days.
     expect(bars).toHaveLength(4);
     for (const [, x, width, height] of bars) {
@@ -83,12 +83,42 @@ describe('session panel', () => {
 
   it('does not duplicate a session when a stale reading comes back to an older reset time', () => {
     const stale = [...samples.slice(0, 2), samples[2], session(now - 4 * HOUR, 10, firstEnd), samples[3]];
-    expect(renderPanels(stale, now, [...all]).match(/<rect class="bar/g)).toHaveLength(2);
+    expect(renderPanels(stale, now, [...all]).match(/<rect class="bar(?: hot)?"/g)).toHaveLength(2);
     expect(cycles(stale, 'session')).toHaveLength(2);
   });
 
   it('says nothing without sessions in the last 7 days', () => {
     expect(renderPanels([session(now - 9 * DAY, 50, now - 9 * DAY + HOUR)], now, [...all])).toBe('');
+  });
+});
+
+describe('accessibility of the panels', () => {
+  const html = renderPanels([session(now - 2 * HOUR, 95, now + HOUR), session(now - 10 * MIN, 30, now + HOUR), weekly(now - HOUR, 40, now + DAY), spend(now - HOUR, 200)], now, [...all]);
+
+  it('names and describes every chart with elements that exist', () => {
+    for (const id of ['sessions', 'weekly', 'spend']) {
+      expect(html).toContain(`<h2 id="${id}-title">`);
+      expect(html).toContain(`aria-labelledby="${id}-title" aria-describedby="${id}-desc"><desc id="${id}-desc">`);
+    }
+    expect(html).not.toMatch(/<svg[^>]*><title>/);
+  });
+
+  it('summarizes the data in the description', () => {
+    expect(html).toContain('<desc id="sessions-desc">Bar chart of the peak of each session in the last 7 days: 1 session, 1 reached 90% or more, the highest peak was 95%.</desc>');
+    expect(html).toContain('Latest reading 40%.</desc>');
+    expect(html).toContain('Latest reading 25% on ');
+  });
+
+  it('stripes the bars that reached 90 %, one overlay per bar', () => {
+    expect(html.match(/<pattern id="hot-hatch"/g)).toHaveLength(1);
+    expect(html.match(/<rect class="bar-hatch"/g)).toHaveLength(1);
+    expect(html).toContain('fill="url(#hot-hatch)"');
+  });
+
+  it('draws no stripes when no session is hot, and never uses inline styles', () => {
+    const calm = renderPanels([session(now - 10 * MIN, 30, now + HOUR)], now, ['session']);
+    expect(calm).not.toContain('hot-hatch');
+    expect(html).not.toContain('style=');
   });
 });
 
@@ -171,7 +201,7 @@ describe('spend panel and the allowed panels', () => {
 
   it('lists the sessions first, then the weekly window and the spend', () => {
     const html = renderPanels(samples, now, [...all]);
-    const titles = [...html.matchAll(/<h2>([^<]+)<\/h2>/g)].map((m) => m[1]);
+    const titles = [...html.matchAll(/<h2 id="[a-z]+-title">([^<]+)<\/h2>/g)].map((m) => m[1]);
     expect(titles).toEqual(['Sessions (5hr)', 'Weekly (7 day)', 'Monthly Credits']);
   });
 

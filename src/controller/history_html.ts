@@ -39,13 +39,15 @@ circle:hover { fill: currentColor; }
 .bar { fill: var(--vscode-charts-blue); opacity: 0.9; }
 .bar.hot { fill: var(--vscode-charts-red); }
 .bar:hover { opacity: 1; }
+.bar-hatch { pointer-events: none; }
+.hatch { stroke: var(--vscode-editor-background); stroke-width: 2; }
 .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--vscode-descriptionForeground); margin: 4px 0 0; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-left: 10px; }
 .swatch:first-child { margin-left: 0; }
 .session-bg { background: var(--vscode-charts-blue); }
 .weekly-bg { background: var(--vscode-charts-orange); }
 .spend-bg { background: var(--vscode-charts-green); }
-.hot-bg { background: var(--vscode-charts-red); }
+.hot-bg { background: repeating-linear-gradient(45deg, var(--vscode-charts-red) 0 2px, var(--vscode-editor-background) 2px 4px); }
 .pace-bg { background: var(--vscode-descriptionForeground); }
 .projection-bg { background: var(--vscode-charts-orange); opacity: 0.6; }
 </style>
