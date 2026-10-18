@@ -12,10 +12,15 @@ const SPEND_MIN_SPAN_MS = 24 * HOUR;
 /** The monthly limit resets, so a projection beyond a month never happens. */
 const MAX_SPEND_ETA_MS = 31 * 24 * HOUR;
 
-/** Moments (ms since epoch) at which, at the current pace, a window or the monthly limit is reached. */
+/** What the pace of a window says: the moment (ms since epoch) at which it fills up. */
+export interface WindowForecast {
+  fullAt: number;
+}
+
+/** The windows say when they fill up; the monthly spend, the moment (ms since epoch) its limit is reached. */
 export interface Forecasts {
-  session?: number;
-  weekly?: number;
+  session?: WindowForecast;
+  weekly?: WindowForecast;
   spend?: number;
 }
 
@@ -57,7 +62,7 @@ function sinceLastReset(points: Point[], isReset: (previous: number, next: numbe
   return points;
 }
 
-function forecastWindow(samples: Sample[], key: 'session' | 'weekly', usage: Usage, now: number): number | undefined {
+function forecastWindow(samples: Sample[], key: 'session' | 'weekly', usage: Usage, now: number): WindowForecast | undefined {
   const current = usage[key];
   const resetsAt = current?.resetsAt?.getTime();
   if (!current || resetsAt === undefined || current.percent >= 100) {
@@ -76,7 +81,7 @@ function forecastWindow(samples: Sample[], key: 'session' | 'weekly', usage: Usa
   }
   // Anchored to the current value: steadier than the regression intercept with integer-like steps.
   const reachesAt = now + (100 - current.percent) / perMs;
-  return reachesAt < resetsAt ? reachesAt : undefined;
+  return reachesAt < resetsAt ? { fullAt: reachesAt } : undefined;
 }
 
 function forecastSpend(samples: Sample[], usage: Usage, now: number): number | undefined {

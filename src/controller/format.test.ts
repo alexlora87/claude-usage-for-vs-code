@@ -105,7 +105,7 @@ describe('reset time', () => {
   it('adds the pace lines only when a window would fill up before it resets', () => {
     const reset = new Date(2026, 9, 16, 18, 45);
     const usage = { session: { percent: 50, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } };
-    const tooltip = formatTooltip(usage, now, { session: now + 80 * MIN, weekly: now - 1 });
+    const tooltip = formatTooltip(usage, now, { session: { fullAt: now + 80 * MIN }, weekly: { fullAt: now - 1 } });
     expect(tooltip).toBe(
       'Session (5hr) · resets today at 18:45  \nSession (5hr) · at this pace, 100% in ~1h 20m  \nWeekly (7 day) · resets today at 18:45',
     );

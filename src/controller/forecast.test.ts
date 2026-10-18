@@ -9,6 +9,7 @@ const resetsAt = now + 3 * HOUR;
 
 const windowSample = (t: number, percent: number, reset = resetsAt): Sample => ({ t, session: { percent, resetsAt: reset } });
 const usageAt = (percent: number, reset = resetsAt) => ({ session: { percent, resetsAt: new Date(reset) } });
+const fullAt = (forecast?: { fullAt: number }) => forecast?.fullAt;
 
 describe('session forecast', () => {
   const steady = [0, 1, 2, 3, 4].map((i) => windowSample(now - 50 * MIN + i * 10 * MIN, 20 + i * 5));
@@ -16,7 +17,7 @@ describe('session forecast', () => {
   it('projects when the 100 % is reached if it happens before the reset', () => {
     // 0.5 %/min and 45 % now: 55 % left -> 110 min.
     const { session } = computeForecasts(steady, usageAt(45), now);
-    expect(Math.round((session! - now) / MIN)).toBe(110);
+    expect(Math.round((fullAt(session)! - now) / MIN)).toBe(110);
   });
 
   it('says nothing when the reset comes first', () => {
@@ -34,7 +35,7 @@ describe('session forecast', () => {
   it('ignores readings of a previous cycle and what happened before a reset', () => {
     const previous = [windowSample(now - 55 * MIN, 99, resetsAt - 5 * HOUR), windowSample(now - 45 * MIN, 98, resetsAt - 5 * HOUR)];
     const { session } = computeForecasts([...previous, ...steady], usageAt(45), now);
-    expect(Math.round((session! - now) / MIN)).toBe(110);
+    expect(Math.round((fullAt(session)! - now) / MIN)).toBe(110);
     const afterDrop = [windowSample(now - 50 * MIN, 90), ...steady.slice(1).map((s) => ({ ...s }))];
     expect(computeForecasts(afterDrop, usageAt(45), now).session).toBeDefined();
   });

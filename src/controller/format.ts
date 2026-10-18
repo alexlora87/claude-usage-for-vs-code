@@ -1,5 +1,5 @@
 import type { ViewState } from '../engine/scheduler';
-import type { Forecasts } from './forecast';
+import type { Forecasts, WindowForecast } from './forecast';
 import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
@@ -100,8 +100,8 @@ export function formatResetTime(date: Date, now: number): string {
 }
 
 /** `At this pace` line for a window that would fill up before it resets. */
-function paceLine(label: string, reachesAt: number | undefined, now: number): string[] {
-  return reachesAt !== undefined && reachesAt > now ? [`${label} · at this pace, 100% in ~${formatRemaining(reachesAt - now, true)}`] : [];
+function paceLine(label: string, forecast: WindowForecast | undefined, now: number): string[] {
+  return forecast && forecast.fullAt > now ? [`${label} · at this pace, 100% in ~${formatRemaining(forecast.fullAt - now, true)}`] : [];
 }
 
 /** Markdown for the hover: one line per window, joined with a hard line break. */
