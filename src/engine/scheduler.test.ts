@@ -23,6 +23,14 @@ function setup(fetchUsage: () => Promise<Usage>, start = 1_000_000) {
   return { scheduler, clock, cache, path };
 }
 
+describe('deriveState', () => {
+  it('reports when the shown usage was fetched, also while it is stale', () => {
+    expect(deriveState({ usage, fetchedAt: 5 * MIN }, 6 * MIN).fetchedAt).toBe(5 * MIN);
+    const stale = deriveState({ usage, fetchedAt: 5 * MIN, error: { kind: 'offline', message: 'x' } }, 6 * MIN);
+    expect(stale).toMatchObject({ stale: true, fetchedAt: 5 * MIN });
+  });
+});
+
 describe('backoffMs', () => {
   it('doubles from 60s up to 15 minutes', () => {
     expect([1, 2, 3, 4, 5, 6].map(backoffMs)).toEqual([60_000, 120_000, 240_000, 480_000, 900_000, 900_000]);

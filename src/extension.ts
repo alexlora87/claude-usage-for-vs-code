@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { StatusBar } from './controller/status_bar';
 import { configDir, readAccessToken } from './engine/credentials';
 import { UsageScheduler } from './engine/scheduler';
+import { History, historyFile } from './engine/history';
 import { cacheFile, SharedCache } from './engine/shared_cache';
 import { fetchUsage } from './engine/usage_api';
 
@@ -16,6 +17,7 @@ function refreshIntervalMs(): number {
 export function activate(context: vscode.ExtensionContext): void {
   const statusBar = new StatusBar();
   const cache = new SharedCache(cacheFile(context.globalStorageUri.fsPath, configDir()));
+  const history = new History(historyFile(context.globalStorageUri.fsPath, configDir()));
   const scheduler = new UsageScheduler({
     readCache: () => cache.read(),
     writeCache: (patch) => cache.write(patch),
@@ -31,7 +33,11 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     busy = true;
     try {
-      statusBar.update(await scheduler.tick(force));
+      const state = await scheduler.tick(force);
+      if (state.usage && state.fetchedAt !== undefined && !state.stale) {
+        history.record(state.usage, state.fetchedAt);
+      }
+      statusBar.update(state);
     } finally {
       busy = false;
     }

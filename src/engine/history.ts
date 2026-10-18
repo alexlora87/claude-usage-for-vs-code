@@ -1,0 +1,105 @@
+import { createHash, randomBytes } from 'node:crypto';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { Usage } from '../shared/types';
+
+const MINUTE = 60_000;
+/** Samples closer than this to the previous one are skipped. */
+export const MIN_GAP_MS = 5 * MINUTE;
+export const RETENTION_MS = 30 * 24 * 60 * MINUTE;
+
+/** Percent used at one moment; `resetsAt` (ms) tells which window cycle it belongs to. */
+export interface Point {
+  percent: number;
+  resetsAt?: number;
+}
+
+export interface Sample {
+  /** Time of the reading, ms since epoch. */
+  t: number;
+  session?: Point;
+  weekly?: Point;
+  /** Monthly spend: percent of the limit, with the amounts for the projection. */
+  spend?: Point & { used: number; limit: number };
+}
+
+const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+function revivePoint(raw: unknown): Point | undefined {
+  const point = raw as Partial<Point> | undefined;
+  if (!point || !isNumber(point.percent)) {
+    return undefined;
+  }
+  return { percent: point.percent, resetsAt: isNumber(point.resetsAt) ? point.resetsAt : undefined };
+}
+
+/** The file may come from another version or be corrupted, so only well-formed samples are kept. */
+export function reviveSamples(raw: unknown): Sample[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.flatMap((item): Sample[] => {
+    if (!item || !isNumber(item.t)) {
+      return [];
+    }
+    const spend = revivePoint(item.spend);
+    const used = isNumber(item.spend?.used) && isNumber(item.spend?.limit);
+    return [{
+      t: item.t,
+      session: revivePoint(item.session),
+      weekly: revivePoint(item.weekly),
+      spend: spend && used ? { ...spend, used: item.spend.used, limit: item.spend.limit } : undefined,
+    }];
+  });
+}
+
+/** Adds a reading unless it is too close to the previous one, and drops what is older than the retention. */
+export function appendSample(samples: Sample[], usage: Usage, t: number): Sample[] {
+  const last = samples[samples.length - 1];
+  if (last && t - last.t < MIN_GAP_MS) {
+    return samples;
+  }
+  const point = (w: Usage['session']): Point | undefined => (w ? { percent: w.percent, resetsAt: w.resetsAt?.getTime() } : undefined);
+  const sample: Sample = {
+    t,
+    session: point(usage.session),
+    weekly: point(usage.weekly),
+    spend: usage.spend && { percent: usage.spend.percent, used: usage.spend.used, limit: usage.spend.limit },
+  };
+  return [...samples.filter((s) => t - s.t <= RETENTION_MS), sample];
+}
+
+/** One history file per account, next to the shared cache. */
+export function historyFile(storageDir: string, configDir: string): string {
+  const id = createHash('sha256').update(configDir).digest('hex').slice(0, 12);
+  return join(storageDir, `history-${id}.json`);
+}
+
+/** Usage readings kept locally for the projection and the history panel. */
+export class History {
+  constructor(private readonly path: string) {}
+
+  read(): Sample[] {
+    try {
+      return reviveSamples(JSON.parse(readFileSync(this.path, 'utf8')));
+    } catch {
+      return [];
+    }
+  }
+
+  record(usage: Usage, t: number): void {
+    const before = this.read();
+    const after = appendSample(before, usage, t);
+    if (after === before) {
+      return;
+    }
+    try {
+      mkdirSync(join(this.path, '..'), { recursive: true, mode: 0o700 });
+      const temp = `${this.path}.${randomBytes(6).toString('hex')}.tmp`;
+      writeFileSync(temp, JSON.stringify(after), { flag: 'wx', mode: 0o600 });
+      renameSync(temp, this.path);
+    } catch {
+      // The history is a convenience; a failed write must not break the extension.
+    }
+  }
+}
