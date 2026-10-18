@@ -182,7 +182,7 @@ function hoverDots(css: string, run: Array<Reading & { at?: number }>, s: Scale,
 }
 
 /** Stripes over the bars that reached HOT_AT, so they do not depend on the red alone. */
-const HATCH = '<defs><pattern id="hot-hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line class="hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>';
+const HATCH = '<defs><pattern id="hot-hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line class="hatch" x1="3" y1="0" x2="3" y2="6"/></pattern></defs>';
 
 /** The `desc` is what a screen reader says about the chart; a `<title>` here would show over the whole chart. */
 function panel(id: string, title: string, note: string, desc: string, svg: string, legend: string, height: number): string {
@@ -254,7 +254,7 @@ function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
     note += ` · ${past.length} previous cycle${past.length === 1 ? '' : 's'}, peak${past.length === 1 ? '' : 's'} ${past.map((c) => `${Math.round(c.peak)}%`).join(', ')}`;
   }
   const legend = `<span class="swatch weekly-bg"></span>Usage <span class="swatch pace-bg"></span>Even pace <span class="swatch projection-bg"></span>Projection${past.length ? ' <span class="swatch past-bg"></span>Previous cycles' : ''}`;
-  const desc = `${note}. Latest reading ${Math.round(last.percent)}%.`;
+  const desc = `Line chart of the weekly cycle against an even pace. ${note}. Latest reading ${Math.round(last.percent)}%.`;
   return panel('weekly', 'Weekly (7 day)', note, desc, axes(s, cycle.start, cycle.end) + before + pace + nowLine + drawn + projection, legend, layout.height);
 }
 

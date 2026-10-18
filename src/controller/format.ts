@@ -178,11 +178,14 @@ export function visibleUsage(usage: Usage, options: Pick<ViewOptions, 'windows' 
 /** The usage as one plain line to paste somewhere, or undefined when the settings leave nothing to show. */
 export function formatSummary(usage: Usage, options: Pick<ViewOptions, 'windows' | 'showSpend'>, now: number): string | undefined {
   const { session, weekly, spend } = visibleUsage(usage, options);
+  // A window whose reset has passed is an old reading: its percent says nothing about now.
+  const current = (w: UsageWindow | undefined) => (w && !(w.resetsAt && w.resetsAt.getTime() <= now) ? w : undefined);
   const window = (label: string, w: UsageWindow, longWindow: boolean) =>
     `${label} ${Math.round(w.percent)}%${w.resetsAt ? ` · resets in ${formatRemaining(w.resetsAt.getTime() - now, longWindow)}` : ''}`;
+  const [currentSession, currentWeekly] = [current(session), current(weekly)];
   const parts = [
-    session ? window('Session (5hr)', session, false) : undefined,
-    weekly ? window('Weekly (7 day)', weekly, true) : undefined,
+    currentSession ? window('Session (5hr)', currentSession, false) : undefined,
+    currentWeekly ? window('Weekly (7 day)', currentWeekly, true) : undefined,
     spend
       ? `Monthly Credits ${formatMoney(spend.used, spend.currency)} of ${formatMoney(spend.limit, spend.currency)} (${Math.round(spend.percent)}%)${spend.limitReached ? ' · limit reached' : ''}`
       : undefined,

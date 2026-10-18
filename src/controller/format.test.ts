@@ -299,6 +299,12 @@ describe('formatSummary', () => {
     expect(formatSummary({ session: { percent: 10 }, spend: { ...usage.spend, limitReached: true } }, all, now)).toBe('Session (5hr) 10% | Monthly Credits $7.29 of $20.00 (36%) · limit reached');
   });
 
+  it('leaves out a window whose reset has passed, because its percent is an old reading', () => {
+    const stale = { session: { percent: 90, resetsAt: new Date(now - MIN) }, weekly: usage.weekly };
+    expect(formatSummary(stale, { windows: 'both', showSpend: false }, now)).toBe('Weekly (7 day) 71% · resets in 2d 4h');
+    expect(formatSummary({ session: stale.session }, all, now)).toBeUndefined();
+  });
+
   it('has nothing to say when the settings hide everything', () => {
     expect(formatSummary({ spend: usage.spend }, { windows: 'both', showSpend: false }, now)).toBeUndefined();
     expect(formatSummary({}, all, now)).toBeUndefined();

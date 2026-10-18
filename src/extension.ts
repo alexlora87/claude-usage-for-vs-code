@@ -3,7 +3,7 @@ import { basename, join } from 'node:path';
 import * as vscode from 'vscode';
 import { computeForecasts, Forecasts } from './controller/forecast';
 import { formatSummary, visibleUsage } from './controller/format';
-import { claimCrossing, crossings, pruneMarkers } from './controller/notifier';
+import { claimUnlessMuted, crossings, pruneMarkers } from './controller/notifier';
 import { clearMute, muteChoices, muteFile, readMutedUntil, writeMute } from './controller/mute';
 import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
 import { exportFileName, forExport, toCsv, toJson } from './controller/history_export';
@@ -28,18 +28,17 @@ function refreshIntervalMs(): number {
 
 /**
  * Tells once per window cycle and level; windows of VS Code share the markers, so only one of them shows it.
- * While muted nothing is claimed: what is still true when the mute ends is told then.
+ * While muted nothing is claimed, so what still holds after the mute is told at the next refresh.
  */
 function notify(storageDir: string, account: string, usage: Usage, now: number): void {
-  if (!notificationsEnabled() || readMutedUntil(muteFile(storageDir, account), now) !== undefined) {
+  if (!notificationsEnabled()) {
     return;
   }
   const options = readOptions();
-  for (const crossing of crossings(visibleUsage(usage, options), options.thresholds, now)) {
-    if (claimCrossing(storageDir, account, crossing)) {
-      const text = `Claude Usage: ${crossing.message}`;
-      void (crossing.level === 'critical' ? vscode.window.showErrorMessage(text) : vscode.window.showWarningMessage(text));
-    }
+  const muted = readMutedUntil(muteFile(storageDir, account), now) !== undefined;
+  for (const crossing of claimUnlessMuted(storageDir, account, crossings(visibleUsage(usage, options), options.thresholds, now), muted)) {
+    const text = `Claude Usage: ${crossing.message}`;
+    void (crossing.level === 'critical' ? vscode.window.showErrorMessage(text) : vscode.window.showWarningMessage(text));
   }
 }
 
@@ -49,7 +48,7 @@ async function copySummary(state: ViewState): Promise<void> {
     void vscode.window.showInformationMessage('Claude Usage: no usage to copy yet.');
     return;
   }
-  const asOf = state.stale && state.fetchedAt !== undefined ? ` (as of ${new Date(state.fetchedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })})` : '';
+  const asOf = state.stale && state.fetchedAt !== undefined ? ` (as of ${new Date(state.fetchedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })})` : '';
   await vscode.env.clipboard.writeText(summary + asOf);
   vscode.window.setStatusBarMessage('Claude Usage: summary copied', 3000);
 }
@@ -64,10 +63,10 @@ async function exportHistory(history: History): Promise<void> {
   }
   const now = Date.now();
   const name = `${exportFileName(now)}.csv`;
-  // The workspace folder, not the home folder, so the dialog also opens in a remote window.
+  // The home folder, so the file is not left inside a repository by accident; a remote window has no local home to offer.
   const folder = vscode.workspace.workspaceFolders?.[0]?.uri;
   const uri = await vscode.window.showSaveDialog({
-    defaultUri: folder ? vscode.Uri.joinPath(folder, name) : vscode.Uri.file(join(homedir(), name)),
+    defaultUri: vscode.env.remoteName === undefined || !folder ? vscode.Uri.file(join(homedir(), name)) : vscode.Uri.joinPath(folder, name),
     filters: { CSV: ['csv'], JSON: ['json'] },
     title: 'Export Claude Usage history',
   });
@@ -75,7 +74,12 @@ async function exportHistory(history: History): Promise<void> {
     return;
   }
   const text = uri.path.toLowerCase().endsWith('.json') ? toJson(samples, now) : toCsv(samples);
-  await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
+  try {
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
+  } catch {
+    void vscode.window.showErrorMessage(`Claude Usage: could not export the history to ${basename(uri.path)}.`);
+    return;
+  }
   void vscode.window.showInformationMessage(`Claude Usage: exported ${samples.length} readings to ${basename(uri.path)}.`);
 }
 
@@ -140,6 +144,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('claudeUsage.showHistory', () => historyView.show()),
     vscode.commands.registerCommand('claudeUsage.showMenu', () => showMenu(mutedUntil)),
     vscode.commands.registerCommand('claudeUsage.muteNotifications', async () => {
+      if (!notificationsEnabled()) {
+        void vscode.window.showInformationMessage('Claude Usage: notifications are turned off in the settings.');
+        return;
+      }
       const pick = await vscode.window.showQuickPick(muteChoices(lastState.usage, readOptions(), Date.now()), { title: 'Mute notifications' });
       if (pick && !writeMute(mutePath, pick.until)) {
         void vscode.window.showErrorMessage('Claude Usage: could not save the mute.');
@@ -147,6 +155,10 @@ export function activate(context: vscode.ExtensionContext): void {
       statusBar.render();
     }),
     vscode.commands.registerCommand('claudeUsage.unmuteNotifications', () => {
+      if (mutedUntil() === undefined) {
+        void vscode.window.showInformationMessage('Claude Usage: notifications are not muted.');
+        return;
+      }
       clearMute(mutePath);
       statusBar.render();
       // What crossed a threshold while muted and still holds is told now.
