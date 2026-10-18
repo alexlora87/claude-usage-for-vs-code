@@ -124,6 +124,12 @@ describe('spend panel and the allowed panels', () => {
     expect(html).toContain('Monthly Credits');
   });
 
+  it('lists the sessions first, then the weekly window and the spend', () => {
+    const html = renderPanels(samples, now, [...all]);
+    const titles = [...html.matchAll(/<h2>([^<]+)<\/h2>/g)].map((m) => m[1]);
+    expect(titles).toEqual(['Sessions (5hr)', 'Weekly (7 day)', 'Monthly Credits']);
+  });
+
   it('draws only the allowed panels', () => {
     const html = renderPanels(samples, now, ['session']);
     expect(html).toContain('Sessions (5hr)');

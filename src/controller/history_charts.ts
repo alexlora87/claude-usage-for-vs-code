@@ -223,8 +223,8 @@ function spendPanel(samples: Sample[], now: number): string {
 
 export function renderPanels(samples: Sample[], now: number, allowed: SeriesKey[]): string {
   return [
-    allowed.includes('weekly') ? weeklyPanel(samples, now) : '',
     allowed.includes('session') ? sessionPanel(samples, now) : '',
+    allowed.includes('weekly') ? weeklyPanel(samples, now) : '',
     allowed.includes('spend') ? spendPanel(samples, now) : '',
   ].join('');
 }
