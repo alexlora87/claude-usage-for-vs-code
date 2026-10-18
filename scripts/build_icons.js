@@ -1,4 +1,4 @@
-// Generates the status bar icon font (21 ring, 21 pie and 21 bar glyphs, 5% steps) and
+// Generates the status bar icon font (21 ring, 21 pie and 3 x 21 bar glyphs, 5% steps) and
 // registers the glyphs in package.json. Bump FONT_VERSION when glyphs change:
 // VS Code caches fonts by file name.
 const fs = require('node:fs');
@@ -6,15 +6,16 @@ const path = require('node:path');
 const svg2ttf = require('svg2ttf');
 const ttf2woff = require('ttf2woff');
 
-const FONT_VERSION = 'v4';
+const FONT_VERSION = 'v5';
 const STEPS = 21;
 const FIRST_CODEPOINT = 0xe000;
 const CENTER = { x: 500, y: 380 };
 const OUTLINE = { outer: 400, inner: 350 };
 const FILL = { pie: [0, 290], ring: [200, 290] };
 // The bar is a wide glyph: a rounded track (same 50-unit outline as the ring) with a solid
-// fill inside, separated from it by a gap so 5% stays visible.
-const BAR = { x: 100, width: 2400, top: 590, bottom: 170, outline: 50, gap: 60, advance: 2600 };
+// fill inside, separated from it by a gap so 5% stays visible. Three track widths.
+const BAR = { x: 100, top: 590, bottom: 170, outline: 50, gap: 60 };
+const BAR_WIDTHS = { small: 1800, medium: 2400, big: 3000 };
 const DEFAULT_ADVANCE = 1000;
 
 const point = (r, deg) => {
@@ -63,8 +64,8 @@ const roundedRect = (x0, y0, x1, y1, radius, reverse = false) => {
   return toPath(reverse ? points.reverse() : points);
 };
 
-function bar(step) {
-  const { x, width, top, bottom, outline: line, gap } = BAR;
+function bar(step, width) {
+  const { x, top, bottom, outline: line, gap } = BAR;
   const inset = line + gap;
   const track = roundedRect(x, bottom, x + width, top, (top - bottom) / 2) +
     roundedRect(x + line, bottom + line, x + width - line, top - line, (top - bottom) / 2 - line, true);
@@ -88,13 +89,15 @@ for (const style of ['ring', 'pie']) {
     });
   }
 }
-for (let step = 0; step < STEPS; step++) {
-  glyphs.push({
-    id: `claude-usage-bar-${String(step * 5).padStart(2, '0')}`,
-    codepoint: FIRST_CODEPOINT + glyphs.length,
-    d: bar(step),
-    advance: BAR.advance,
-  });
+for (const [size, width] of Object.entries(BAR_WIDTHS)) {
+  for (let step = 0; step < STEPS; step++) {
+    glyphs.push({
+      id: `claude-usage-bar-${size}-${String(step * 5).padStart(2, '0')}`,
+      codepoint: FIRST_CODEPOINT + glyphs.length,
+      d: bar(step, width),
+      advance: width + 2 * BAR.x,
+    });
+  }
 }
 
 const svg = `<?xml version="1.0" standalone="no"?>

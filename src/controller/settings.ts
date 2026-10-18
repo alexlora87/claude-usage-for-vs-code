@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { Forecasts } from './forecast';
 import { thresholdsFrom, ViewOptions, WindowsOption } from './format';
-import { Indicator } from './icons';
+import { IconStyle } from './icons';
 
-export const SETTINGS_KEYS = ['extendedView', 'showSpend', 'windows', 'indicator', 'warningThreshold', 'criticalThreshold', 'notifications'];
+export const SETTINGS_KEYS = ['extendedView', 'showSpend', 'windows', 'indicator', 'barSize', 'warningThreshold', 'criticalThreshold', 'notifications'];
 
 export function readOptions(forecasts?: Forecasts): ViewOptions {
   const config = vscode.workspace.getConfiguration('claudeUsage');
@@ -16,8 +16,16 @@ export function readOptions(forecasts?: Forecasts): ViewOptions {
   };
 }
 
-export function readIndicator(): Indicator {
-  return vscode.workspace.getConfiguration('claudeUsage').get<string>('indicator', 'ring') === 'bar' ? 'bar' : 'ring';
+const BAR_SIZES: IconStyle[] = ['bar-small', 'bar-medium', 'bar-big'];
+
+/** What is drawn next to each percentage; the bar size only counts with the bar, and unknown values fall back to the defaults. */
+export function readIconStyle(): IconStyle {
+  const config = vscode.workspace.getConfiguration('claudeUsage');
+  if (config.get<string>('indicator', 'ring') !== 'bar') {
+    return 'ring';
+  }
+  const style = `bar-${config.get<string>('barSize', 'small')}` as IconStyle;
+  return BAR_SIZES.includes(style) ? style : 'bar-small';
 }
 
 export function notificationsEnabled(): boolean {
