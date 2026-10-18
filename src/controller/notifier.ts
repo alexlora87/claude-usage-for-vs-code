@@ -4,8 +4,10 @@ import { Usage } from '../shared/types';
 import { formatMoney, formatRemaining, levelFor, Thresholds } from './format';
 
 const DAY = 24 * 60 * 60_000;
-/** Markers outlive the longest window (7 days), so a cycle is never notified twice. */
-const MARKER_TTL_MS = 8 * DAY;
+/** Markers outlive the longest cycle (the calendar month of the spend), so a cycle is never notified twice. */
+const MARKER_TTL_MS = 32 * DAY;
+/** The API may return slightly different reset times for the same cycle. */
+const CYCLE_TOLERANCE_MINUTES = 2;
 const MARKER_PREFIX = 'notified-';
 
 export type NotifiedWindow = 'session' | 'weekly' | 'spend';
@@ -23,9 +25,10 @@ const minuteOf = (date: Date) => String(Math.round(date.getTime() / 60_000));
 /** The windows (and the monthly spend) that are at or above a threshold, with the text to show. */
 export function crossings(usage: Usage, thresholds: Thresholds, now: number): Crossing[] {
   const result: Crossing[] = [];
-  const add = (window: NotifiedWindow, percent: number, cycleKey: string, message: string, reached = false) => {
+  const add = (window: NotifiedWindow, percent: number, cycleKey: string, message: string, reached = false, resetsAt?: Date) => {
     const level = reached ? 'critical' : levelFor(percent, thresholds);
-    if (level !== 'ok') {
+    // A cycle that already ended is an old reading, not news.
+    if (level !== 'ok' && !(resetsAt && resetsAt.getTime() <= now)) {
       result.push({ window, level, cycleKey, message });
     }
   };
@@ -33,11 +36,11 @@ export function crossings(usage: Usage, thresholds: Thresholds, now: number): Cr
   const resets = (date: Date | undefined, longWindow: boolean) => (date ? ` Resets in ${formatRemaining(date.getTime() - now, longWindow)}.` : '');
   if (session) {
     add('session', session.percent, session.resetsAt ? minuteOf(session.resetsAt) : 'unknown',
-      `Your 5-hour session is at ${Math.round(session.percent)}%.${resets(session.resetsAt, false)}`);
+      `Your 5-hour session is at ${Math.round(session.percent)}%.${resets(session.resetsAt, false)}`, false, session.resetsAt);
   }
   if (weekly) {
     add('weekly', weekly.percent, weekly.resetsAt ? minuteOf(weekly.resetsAt) : 'unknown',
-      `Your 7-day window is at ${Math.round(weekly.percent)}%.${resets(weekly.resetsAt, true)}`);
+      `Your 7-day window is at ${Math.round(weekly.percent)}%.${resets(weekly.resetsAt, true)}`, false, weekly.resetsAt);
   }
   if (spend) {
     // The API gives no reset date for the spend: the calendar month only deduplicates, it is never shown.
@@ -67,6 +70,26 @@ export function claim(dir: string, name: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Claims a crossing unless a marker of the same window and level exists for the same cycle (reset times within 2 minutes). */
+export function claimCrossing(dir: string, account: string, crossing: Crossing): boolean {
+  const minute = Number(crossing.cycleKey);
+  if (Number.isFinite(minute)) {
+    const prefix = `${MARKER_PREFIX}${account}-${crossing.window}-`;
+    const suffix = `-${crossing.level}`;
+    try {
+      for (const name of readdirSync(dir)) {
+        const other = name.startsWith(prefix) && name.endsWith(suffix) ? Number(name.slice(prefix.length, -suffix.length)) : NaN;
+        if (Math.abs(other - minute) <= CYCLE_TOLERANCE_MINUTES) {
+          return false;
+        }
+      }
+    } catch {
+      // No directory yet: nothing was claimed.
+    }
+  }
+  return claim(dir, markerName(account, crossing));
 }
 
 /** Removes the markers of cycles that are over. */

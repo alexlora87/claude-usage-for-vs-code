@@ -71,10 +71,10 @@ export function segments(samples: Sample[], key: SeriesKey, now: number): Segmen
 const formatTime = (t: number) =>
   new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
 
-export function renderHistoryHtml(samples: Sample[], now: number, nonce: string): string {
+export function renderHistoryHtml(samples: Sample[], now: number, nonce: string, allowed: SeriesKey[] = ['session', 'weekly', 'spend']): string {
   const x = (t: number) => PLOT.left + ((t - (now - RANGE_MS)) / RANGE_MS) * (WIDTH - PLOT.left - PLOT.right);
   const y = (percent: number) => PLOT.top + (1 - Math.min(100, Math.max(0, percent)) / 100) * (HEIGHT - PLOT.top - PLOT.bottom);
-  const shown = (Object.keys(SERIES) as SeriesKey[]).map((key) => ({ key, segments: segments(samples, key, now) })).filter((s) => s.segments.length);
+  const shown = (Object.keys(SERIES) as SeriesKey[]).filter((key) => allowed.includes(key)).map((key) => ({ key, segments: segments(samples, key, now) })).filter((s) => s.segments.length);
 
   const grid = [0, 25, 50, 75, 100]
     .map((p) => `<line class="grid" x1="${PLOT.left}" x2="${WIDTH - PLOT.right}" y1="${y(p)}" y2="${y(p)}"/><text class="axis" x="${PLOT.left - 6}" y="${y(p) + 4}" text-anchor="end">${p}%</text>`)

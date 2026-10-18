@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Usage } from '../shared/types';
 import { accountId } from './shared_cache';
@@ -86,19 +86,26 @@ export class History {
     }
   }
 
-  record(usage: Usage, t: number): void {
+  /** Stores the reading and returns all the samples. */
+  record(usage: Usage, t: number): Sample[] {
     const before = this.read();
     const after = appendSample(before, usage, t);
     if (after === before) {
-      return;
+      return before;
     }
+    const temp = `${this.path}.${randomBytes(6).toString('hex')}.tmp`;
     try {
       mkdirSync(join(this.path, '..'), { recursive: true, mode: 0o700 });
-      const temp = `${this.path}.${randomBytes(6).toString('hex')}.tmp`;
       writeFileSync(temp, JSON.stringify(after), { flag: 'wx', mode: 0o600 });
       renameSync(temp, this.path);
     } catch {
       // The history is a convenience; a failed write must not break the extension.
+      try {
+        unlinkSync(temp);
+      } catch {
+        // The temporary file was never created.
+      }
     }
+    return after;
   }
 }

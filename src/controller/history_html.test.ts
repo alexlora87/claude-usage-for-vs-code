@@ -45,6 +45,13 @@ describe('renderHistoryHtml', () => {
     expect(html).toContain('<title>Session (5hr): 12%');
   });
 
+  it('draws only the allowed series', () => {
+    const samples: Sample[] = [{ t: now - 10 * MIN, session: { percent: 10, resetsAt: reset }, weekly: { percent: 3, resetsAt: reset } }];
+    const html = renderHistoryHtml(samples, now, 'abc', ['weekly']);
+    expect(html).toContain('<polyline class="weekly"');
+    expect(html).not.toContain('<polyline class="session"');
+  });
+
   it('says there is no history yet', () => {
     expect(renderHistoryHtml([], now, 'abc')).toContain('No history yet');
   });

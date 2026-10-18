@@ -18,8 +18,7 @@ describe('menuItems', () => {
 });
 
 describe('scopeOf', () => {
-  it('uses the most specific scope that holds a value', () => {
-    expect(scopeOf({ workspaceFolderValue: false, workspaceValue: true })).toBe('workspaceFolder');
+  it('writes to the workspace only when it holds a value', () => {
     expect(scopeOf({ workspaceValue: false })).toBe('workspace');
     expect(scopeOf({ workspaceValue: undefined })).toBe('global');
     expect(scopeOf(undefined)).toBe('global');

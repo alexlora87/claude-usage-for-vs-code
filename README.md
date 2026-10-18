@@ -32,7 +32,7 @@ With `claudeUsage.extendedView` enabled:
 | `claudeUsage.refreshInterval` | `120` | Seconds between usage requests (30-3600). |
 | `claudeUsage.extendedView` | `false` | Show full labels instead of the compact ones. |
 | `claudeUsage.showSpend` | `auto` | `auto` shows the monthly spend when the account has it; `never` hides it. |
-| `claudeUsage.windows` | `both` | `both`, `session` or `weekly`: which windows the status bar shows. |
+| `claudeUsage.windows` | `both` | `both`, `session` or `weekly`: which windows the status bar, the notifications and the history show. |
 | `claudeUsage.warningThreshold` | `70` | Percentage from which the status bar turns yellow. |
 | `claudeUsage.criticalThreshold` | `90` | Percentage from which it turns red. Must be higher than the warning threshold. |
 | `claudeUsage.notifications` | `true` | Notify when a threshold is reached. |

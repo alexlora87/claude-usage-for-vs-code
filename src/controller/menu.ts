@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { menuItems, scopeOf, SettingScope } from './menu_items';
 
 const TARGETS: Record<SettingScope, vscode.ConfigurationTarget> = {
-  workspaceFolder: vscode.ConfigurationTarget.WorkspaceFolder,
   workspace: vscode.ConfigurationTarget.Workspace,
   global: vscode.ConfigurationTarget.Global,
 };

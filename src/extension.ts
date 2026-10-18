@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { computeForecasts, Forecasts } from './controller/forecast';
 import { visibleUsage } from './controller/format';
-import { claim, crossings, markerName, pruneMarkers } from './controller/notifier';
+import { claimCrossing, crossings, pruneMarkers } from './controller/notifier';
 import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
 import { HistoryView } from './controller/history_view';
 import { openSettings, showMenu, toggleExtendedView } from './controller/menu';
@@ -28,7 +28,7 @@ function notify(storageDir: string, account: string, usage: Usage, now: number):
   }
   const options = readOptions();
   for (const crossing of crossings(visibleUsage(usage, options), options.thresholds, now)) {
-    if (claim(storageDir, markerName(account, crossing))) {
+    if (claimCrossing(storageDir, account, crossing)) {
       const show = crossing.level === 'critical' ? vscode.window.showErrorMessage : vscode.window.showWarningMessage;
       void show(`Claude Usage: ${crossing.message}`);
     }
@@ -64,8 +64,7 @@ export function activate(context: vscode.ExtensionContext): void {
       // Once per new reading: the history file is read and parsed in full.
       if (state.usage && state.fetchedAt !== undefined && !state.stale && state.fetchedAt !== recordedAt) {
         recordedAt = state.fetchedAt;
-        history.record(state.usage, state.fetchedAt);
-        forecasts = computeForecasts(history.read(), state.usage, state.fetchedAt);
+        forecasts = computeForecasts(history.record(state.usage, state.fetchedAt), state.usage, state.fetchedAt);
         historyView.refresh();
         notify(storageDir, account, state.usage, Date.now());
       }
@@ -90,6 +89,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (SETTINGS_KEYS.some((key) => e.affectsConfiguration(`claudeUsage.${key}`))) {
         statusBar.render();
+        historyView.refresh();
       }
     }),
   );

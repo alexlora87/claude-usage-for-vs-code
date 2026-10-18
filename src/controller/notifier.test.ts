@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_THRESHOLDS } from './format';
-import { claim, crossings, markerName, pruneMarkers } from './notifier';
+import { claim, claimCrossing, crossings, markerName, pruneMarkers } from './notifier';
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
@@ -24,6 +24,10 @@ describe('crossings', () => {
     expect(result.map((c) => [c.window, c.level])).toEqual([['session', 'critical'], ['weekly', 'warning']]);
     expect(result[0].message).toBe('Your 5-hour session is at 95%. Resets in 0h 40m.');
     expect(result[1].message).toBe('Your 7-day window is at 72%. Resets in 2d 0h.');
+  });
+
+  it('skips a cycle that already ended', () => {
+    expect(crossings({ session: { percent: 95, resetsAt: new Date(now - MIN) } }, DEFAULT_THRESHOLDS, now)).toEqual([]);
   });
 
   it('uses the custom thresholds', () => {
@@ -65,6 +69,26 @@ describe('markers', () => {
     expect(claim(dir, markerName('abc', critical))).toBe(true);
   });
 
+  it('treats reset times within 2 minutes as the same cycle', () => {
+    const at = (ms: number) => crossings({ session: { percent: 80, resetsAt: new Date(now + ms) } }, DEFAULT_THRESHOLDS, now)[0];
+    expect(claimCrossing(dir, 'abc', at(40 * MIN + 29_900))).toBe(true);
+    expect(claimCrossing(dir, 'abc', at(40 * MIN + 30_100))).toBe(false);
+    expect(claimCrossing(dir, 'abc', at(40 * MIN + 2 * MIN))).toBe(false);
+    expect(claimCrossing(dir, 'abc', at(5 * 60 * MIN))).toBe(true);
+    expect(claimCrossing(dir, 'other', at(40 * MIN))).toBe(true);
+  });
+
+  it('claims the monthly spend once, and keeps its marker for a whole month', () => {
+    const [monthly] = crossings({ spend }, DEFAULT_THRESHOLDS, now);
+    expect(claimCrossing(dir, 'abc', monthly)).toBe(true);
+    expect(claimCrossing(dir, 'abc', monthly)).toBe(false);
+    const marker = join(dir, markerName('abc', monthly));
+    const old = new Date(now - 20 * DAY);
+    utimesSync(marker, old, old);
+    pruneMarkers(dir, now);
+    expect(existsSync(marker)).toBe(true);
+  });
+
   it('does not claim when the marker cannot be written', () => {
     writeFileSync(join(dir, 'file'), '');
     expect(claim(join(dir, 'file'), 'notified-x')).toBe(false);
@@ -74,7 +98,7 @@ describe('markers', () => {
     claim(dir, 'notified-old');
     claim(dir, 'notified-new');
     writeFileSync(join(dir, 'cache-abc.json'), '{}');
-    const old = new Date(now - 9 * DAY);
+    const old = new Date(now - 33 * DAY);
     utimesSync(join(dir, 'notified-old'), old, old);
     utimesSync(join(dir, 'cache-abc.json'), old, old);
     pruneMarkers(dir, now);

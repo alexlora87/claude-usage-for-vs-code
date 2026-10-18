@@ -12,12 +12,9 @@ export function menuItems(extended: boolean): MenuItem[] {
   ];
 }
 
-export type SettingScope = 'workspaceFolder' | 'workspace' | 'global';
+export type SettingScope = 'workspace' | 'global';
 
 /** Where a setting is currently set, so a change is written there and a more specific value cannot hide it. */
-export function scopeOf(inspected?: { workspaceFolderValue?: unknown; workspaceValue?: unknown }): SettingScope {
-  if (inspected?.workspaceFolderValue !== undefined) {
-    return 'workspaceFolder';
-  }
+export function scopeOf(inspected?: { workspaceValue?: unknown }): SettingScope {
   return inspected?.workspaceValue !== undefined ? 'workspace' : 'global';
 }

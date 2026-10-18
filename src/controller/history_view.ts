@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import * as vscode from 'vscode';
 import { Sample } from '../engine/history';
-import { renderHistoryHtml } from './history_html';
+import { renderHistoryHtml, SeriesKey } from './history_html';
+import { readOptions } from './settings';
 
 /** The history panel: a static page without scripts, rebuilt when a new reading arrives. */
 export class HistoryView implements vscode.Disposable {
@@ -22,6 +23,12 @@ export class HistoryView implements vscode.Disposable {
     this.panel.onDidDispose(() => {
       this.panel = undefined;
     });
+    // A hidden panel keeps its last page, so it is rebuilt when it becomes visible again.
+    this.panel.onDidChangeViewState((e) => {
+      if (e.webviewPanel.visible) {
+        this.render();
+      }
+    });
     this.render();
   }
 
@@ -34,7 +41,18 @@ export class HistoryView implements vscode.Disposable {
 
   private render(): void {
     if (this.panel) {
-      this.panel.webview.html = renderHistoryHtml(this.readSamples(), Date.now(), randomBytes(16).toString('base64'));
+      const { windows, showSpend } = readOptions();
+      const allowed: SeriesKey[] = [];
+      if (windows !== 'weekly') {
+        allowed.push('session');
+      }
+      if (windows !== 'session') {
+        allowed.push('weekly');
+      }
+      if (showSpend) {
+        allowed.push('spend');
+      }
+      this.panel.webview.html = renderHistoryHtml(this.readSamples(), Date.now(), randomBytes(16).toString('base64'), allowed);
     }
   }
 

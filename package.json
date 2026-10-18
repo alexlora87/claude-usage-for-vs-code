@@ -90,7 +90,7 @@
             "Show only the 7-day window."
           ],
           "default": "both",
-          "description": "Which usage windows the status bar shows."
+          "description": "Which usage windows the status bar, the notifications and the history show."
         },
         "claudeUsage.notifications": {
           "type": "boolean",
