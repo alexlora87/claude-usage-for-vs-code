@@ -20,7 +20,7 @@ With `claudeUsage.extendedView` enabled:
 - A ring next to each percentage, or a progress bar if you prefer it, in three lengths (`claudeUsage.indicator`, `claudeUsage.barSize`).
 - Accounts billed by money (for example Enterprise) get their monthly credits and limit: `✦ Claude Usage · Credits $7.29 / $800.00 ◔ 1%`. The hover adds the amount remaining and the exact percentage. It only appears when the account has extra usage enabled with a limit.
 - The status bar turns yellow from 70 % and red from 90 % (the worst of the windows and the monthly spend). Both thresholds are settings.
-- Hover for the exact local reset time of each window (24-hour format). When a window would fill up before it resets, the hover also says when, at the current pace; the same for the monthly limit.
+- Hover for the exact local reset time of each window (24-hour format). At the current pace, the hover also says when a window would fill up before it resets, or else the percent it is on pace to end at when it resets (`on pace to end at ~55%`); for the monthly limit, when it would be reached.
 - A notification the first time a window reaches the warning or the critical threshold in each cycle (once, even with several VS Code windows open).
 - **Claude Usage: Show History** charts the last 7 days. The readings are stored only on your computer (30 days).
 - Several VS Code windows share one request through a cache file, and back off on rate limits (HTTP 429). While a refresh is failing, the last good value stays visible marked with `~`.

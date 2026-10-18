@@ -12,12 +12,10 @@ const SPEND_MIN_SPAN_MS = 24 * HOUR;
 /** The monthly limit resets, so a projection beyond a month never happens. */
 const MAX_SPEND_ETA_MS = 31 * 24 * HOUR;
 
-/** What the pace of a window says: the moment (ms since epoch) at which it fills up. */
-export interface WindowForecast {
-  fullAt: number;
-}
+/** What the pace of a window says: when it fills up (ms since epoch), or the percent it ends at when it does not. */
+export type WindowForecast = { fullAt: number } | { endPercent: number };
 
-/** The windows say when they fill up; the monthly spend, the moment (ms since epoch) its limit is reached. */
+/** The windows say when they fill up or how far they get; the monthly spend, the moment (ms since epoch) its limit is reached. */
 export interface Forecasts {
   session?: WindowForecast;
   weekly?: WindowForecast;
@@ -34,9 +32,9 @@ const WINDOWS = {
   weekly: { lookbackMs: 48 * HOUR, minSpanMs: 6 * HOUR },
 } as const;
 
-/** Least-squares slope in value per ms, or undefined when the points are too few or flat. */
-function slope(points: Point[], minSpanMs: number): number | undefined {
-  if (points.length < MIN_SAMPLES || new Set(points.map((p) => p.value)).size < 2) {
+/** Least-squares slope in value per ms (zero or negative when idle), or undefined when the points are too few or span too little. */
+function regression(points: Point[], minSpanMs: number): number | undefined {
+  if (points.length < MIN_SAMPLES) {
     return undefined;
   }
   const span = points[points.length - 1].t - points[0].t;
@@ -48,8 +46,13 @@ function slope(points: Point[], minSpanMs: number): number | undefined {
   const meanV = points.reduce((sum, p) => sum + p.value, 0) / n;
   const covariance = points.reduce((sum, p) => sum + (p.t - meanT) * (p.value - meanV), 0);
   const variance = points.reduce((sum, p) => sum + (p.t - meanT) ** 2, 0);
-  const result = covariance / variance;
-  return result > 0 ? result : undefined;
+  return covariance / variance;
+}
+
+/** Slope of a value that is growing; the monthly spend only projects when it moves. */
+function growth(points: Point[], minSpanMs: number): number | undefined {
+  const result = new Set(points.map((p) => p.value)).size < 2 ? undefined : regression(points, minSpanMs);
+  return result !== undefined && result > 0 ? result : undefined;
 }
 
 /** Points after the last drop in `drop` direction, i.e. since the window or the month last reset. */
@@ -65,7 +68,7 @@ function sinceLastReset(points: Point[], isReset: (previous: number, next: numbe
 function forecastWindow(samples: Sample[], key: 'session' | 'weekly', usage: Usage, now: number): WindowForecast | undefined {
   const current = usage[key];
   const resetsAt = current?.resetsAt?.getTime();
-  if (!current || resetsAt === undefined || current.percent >= 100) {
+  if (!current || resetsAt === undefined || resetsAt <= now || current.percent >= 100) {
     return undefined;
   }
   const { lookbackMs, minSpanMs } = WINDOWS[key];
@@ -75,13 +78,15 @@ function forecastWindow(samples: Sample[], key: 'session' | 'weekly', usage: Usa
     return point && sameCycle && s.t >= now - lookbackMs && s.t < now ? [{ t: s.t, value: point.percent }] : [];
   });
   points.push({ t: now, value: current.percent });
-  const perMs = slope(sinceLastReset(points, (previous, next) => previous - next > RESET_DROP), minSpanMs);
-  if (perMs === undefined) {
+  const pace = regression(sinceLastReset(points, (previous, next) => previous - next > RESET_DROP), minSpanMs);
+  if (pace === undefined) {
     return undefined;
   }
-  // Anchored to the current value: steadier than the regression intercept with integer-like steps.
-  const reachesAt = now + (100 - current.percent) / perMs;
-  return reachesAt < resetsAt ? { fullAt: reachesAt } : undefined;
+  // An idle window (zero or slightly negative slope) stays where it is. Everything is
+  // anchored to the current value: steadier than the regression intercept with integer-like steps.
+  const perMs = Math.max(0, pace);
+  const fullAt = perMs > 0 ? now + (100 - current.percent) / perMs : Infinity;
+  return fullAt < resetsAt ? { fullAt } : { endPercent: current.percent + perMs * (resetsAt - now) };
 }
 
 function forecastSpend(samples: Sample[], usage: Usage, now: number): number | undefined {
@@ -91,7 +96,7 @@ function forecastSpend(samples: Sample[], usage: Usage, now: number): number | u
   }
   const points: Point[] = samples.flatMap((s) => (s.spend && s.t < now ? [{ t: s.t, value: s.spend.used }] : []));
   points.push({ t: now, value: current.used });
-  const perMs = slope(sinceLastReset(points, (previous, next) => next < previous), SPEND_MIN_SPAN_MS);
+  const perMs = growth(sinceLastReset(points, (previous, next) => next < previous), SPEND_MIN_SPAN_MS);
   if (perMs === undefined) {
     return undefined;
   }

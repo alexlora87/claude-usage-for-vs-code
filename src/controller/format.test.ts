@@ -111,6 +111,48 @@ describe('reset time', () => {
     );
   });
 
+  it('adds the percent a window is on pace to end at when it does not fill up first', () => {
+    const reset = new Date(2026, 9, 16, 18, 45);
+    const usage = { session: { percent: 50, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } };
+    expect(formatTooltip(usage, now, { session: { endPercent: 72.4 }, weekly: { endPercent: 99.7 } })).toBe(
+      'Session (5hr) · resets today at 18:45  \nSession (5hr) · on pace to end at ~72%  \nWeekly (7 day) · resets today at 18:45  \nWeekly (7 day) · on pace to end at ~99%',
+    );
+  });
+
+  it('never says a window ends at 100 %', () => {
+    const usage = { session: { percent: 50, resetsAt: new Date(2026, 9, 16, 18, 45) } };
+    expect(formatTooltip(usage, now, { session: { endPercent: 100 } })).toContain('end at ~99%');
+  });
+
+  it('does not project the end of a window that resets in minutes', () => {
+    const soon = (minutes: number) => ({ session: { percent: 50, resetsAt: new Date(now + minutes * MIN) } });
+    expect(formatTooltip(soon(9), now, { session: { endPercent: 60 } })).not.toContain('on pace');
+    expect(formatTooltip(soon(10), now, { session: { endPercent: 60 } })).toContain('on pace to end at ~60%');
+  });
+
+  it('does not project a hidden window', () => {
+    const usage = {
+      session: { percent: 50, resetsAt: new Date(now + 2 * HOUR) },
+      weekly: { percent: 2, resetsAt: new Date(now + DAY) },
+    };
+    const forecasts = { session: { endPercent: 60 }, weekly: { endPercent: 30 } };
+    const view = buildView({ stale: false, loading: false, usage }, { extended: false, showSpend: true, windows: 'session', thresholds: DEFAULT_THRESHOLDS, forecasts }, () => '*', now);
+    expect(view.tooltip).toContain('end at ~60%');
+    expect(view.tooltip).not.toContain('Weekly');
+  });
+
+  it('keeps every tilde of the hover after a space, so the Markdown never reads it as strikethrough', () => {
+    const reset = new Date(now + 2 * HOUR);
+    const usage = {
+      session: { percent: 50, resetsAt: reset },
+      weekly: { percent: 2, resetsAt: reset },
+      spend: { used: 100, limit: 800, currency: 'USD', percent: 12.5, limitReached: false },
+    };
+    const tooltip = formatTooltip(usage, now, { session: { fullAt: now + 80 * MIN }, weekly: { endPercent: 40 }, spend: now + 30 * DAY })!;
+    expect(tooltip.match(/~/g)).toHaveLength(3);
+    expect(tooltip).not.toMatch(/[^ ]~/);
+  });
+
   it('adds when the monthly limit is reached at this pace', () => {
     const spend = { used: 100, limit: 800, currency: 'USD', percent: 12.5, limitReached: false };
     expect(formatTooltip({ spend }, now, { spend: now + 30 * DAY })).toContain('At this pace, the limit is reached in ~30d 0h');
