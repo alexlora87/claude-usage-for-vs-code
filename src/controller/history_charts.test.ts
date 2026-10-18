@@ -70,9 +70,10 @@ describe('session panel', () => {
   });
 
   it('keeps every bar inside the plot, with some height', () => {
-    const html = renderPanels([...samples, session(now - 8 * DAY + HOUR, 0, now - 8 * DAY + 3 * HOUR), session(now - 7 * DAY - HOUR, 50, now - 7 * DAY + 2 * HOUR)], now, [...all]);
+    const html = renderPanels([...samples, session(now - 6 * DAY, 0, now - 6 * DAY + 2 * HOUR), session(now - 7 * DAY - HOUR, 50, now - 7 * DAY + 2 * HOUR)], now, [...all]);
     const bars = [...html.matchAll(/<rect class="bar[^"]*" x="([\d.]+)" y="[\d.]+" width="([\d.]+)" height="([\d.]+)"/g)];
-    expect(bars.length).toBeGreaterThanOrEqual(3);
+    // The two sessions above, one at 0 % and one that starts before the 7 days.
+    expect(bars).toHaveLength(4);
     for (const [, x, width, height] of bars) {
       expect(Number(x)).toBeGreaterThanOrEqual(40);
       expect(Number(width)).toBeGreaterThan(0);
@@ -117,7 +118,7 @@ describe('weekly panel', () => {
     expect(html).not.toContain('<polyline class="projection');
   });
 
-  it('joins the runs of readings across a gap with a dashed connector', () => {
+  it('joins the runs of readings across a gap with a dotted connector', () => {
     const samples = [weekly(now - 20 * HOUR, 10, end), weekly(now - 20 * HOUR + 10 * MIN, 11, end), weekly(now - 10 * MIN, 15, end), weekly(now, 16, end)];
     const html = renderPanels(samples, now, [...all]);
     expect(html.match(/<polyline class="weekly"/g)).toHaveLength(2);
@@ -135,8 +136,8 @@ describe('weekly panel', () => {
   });
 
   it('picks the cycle that resets last, even when a stale reading follows it', () => {
-    const old = now - 2 * DAY;
-    const samples = [weekly(now - 3 * DAY, 90, old), weekly(now - 3 * HOUR, 5, end), weekly(now - 2 * HOUR, 6, old), weekly(now - HOUR, 7, end)];
+    // The older cycle shows up for the first time after the current one: the last cycle in order is not the right one.
+    const samples = [weekly(now - 3 * HOUR, 5, end), weekly(now - 2 * HOUR, 6, now - 2 * DAY)];
     expect(renderPanels(samples, now, ['weekly'])).toContain('Current cycle');
   });
 
