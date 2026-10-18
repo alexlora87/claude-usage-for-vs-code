@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- **Claude Usage: Mute Notifications…** (also in the menu): silences the notifications for an hour, or until the session or the weekly window resets. Every VS Code window follows it and the hover says until when. What is still above a threshold when the mute ends is notified then. **Claude Usage: Unmute Notifications** ends it earlier.
+- **Claude Usage: Copy Usage Summary** (also in the menu): copies the usage as one line, for example `Session (5hr) 42% · resets in 2h 10m | Weekly (7 day) 71% · resets in 2d 4h`. It follows `windows` and `showSpend`.
+- **Claude Usage: Export History…**: saves the stored readings as CSV or JSON. The spend is left out when `showSpend` is `never`.
+- The weekly panel of the history draws up to four earlier cycles as faint lines, at the same time since the start of the cycle, and lists their peaks.
+- The history charts are described for screen readers, and the session bars that reached 90 % are striped, so they no longer depend on the red alone.
+
 ## 1.3.1
 
 ### Added
