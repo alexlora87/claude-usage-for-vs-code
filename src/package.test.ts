@@ -35,7 +35,9 @@ describe('settings schema', () => {
 describe('commands', () => {
   it('declares every command the menu runs, so it is also in the Command Palette', () => {
     const declared = contributes.commands.map((command: { command: string }) => command.command);
-    for (const item of menuItems(false)) {
+    const state = { extended: false, notifications: true, now: 0 };
+    const items = [...menuItems(state), ...menuItems({ ...state, mutedUntil: 1 })];
+    for (const item of items) {
       expect(declared).toContain(item.command);
     }
   });

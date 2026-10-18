@@ -261,6 +261,22 @@ describe('buildView', () => {
   });
 });
 
+describe('muted notifications in the tooltip', () => {
+  const now = new Date(2026, 9, 16, 12, 0).getTime();
+  const state = { stale: false, loading: false, usage: { session: { percent: 32, resetsAt: new Date(now + 7 * MIN) } } };
+  const options = { extended: false, showSpend: true, windows: 'both' as const, thresholds: DEFAULT_THRESHOLDS };
+
+  it('says until when they are muted', () => {
+    const tooltip = buildView(state, { ...options, mutedUntil: new Date(2026, 9, 16, 18, 45).getTime() }, () => '*', now).tooltip;
+    expect(tooltip).toContain('Notifications muted until today at 18:45');
+  });
+
+  it('says nothing when they are not muted, or when the mute is over', () => {
+    expect(buildView(state, options, () => '*', now).tooltip).not.toContain('muted');
+    expect(buildView(state, { ...options, mutedUntil: now - 1 }, () => '*', now).tooltip).not.toContain('muted');
+  });
+});
+
 describe('formatSummary', () => {
   const now = new Date(2026, 9, 16, 12, 0).getTime();
   const usage = {

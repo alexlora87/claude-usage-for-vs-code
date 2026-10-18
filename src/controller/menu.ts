@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { menuItems, scopeOf, SettingScope } from './menu_items';
+import { notificationsEnabled } from './settings';
 
 const TARGETS: Record<SettingScope, vscode.ConfigurationTarget> = {
   workspace: vscode.ConfigurationTarget.Workspace,
@@ -8,8 +9,9 @@ const TARGETS: Record<SettingScope, vscode.ConfigurationTarget> = {
 
 const config = () => vscode.workspace.getConfiguration('claudeUsage');
 
-export async function showMenu(): Promise<void> {
-  const pick = await vscode.window.showQuickPick(menuItems(config().get<boolean>('extendedView', false)), { title: 'Claude Usage' });
+export async function showMenu(mutedUntil: () => number | undefined): Promise<void> {
+  const state = { extended: config().get<boolean>('extendedView', false), notifications: notificationsEnabled(), mutedUntil: mutedUntil(), now: Date.now() };
+  const pick = await vscode.window.showQuickPick(menuItems(state), { title: 'Claude Usage' });
   if (pick) {
     await vscode.commands.executeCommand(pick.command);
   }

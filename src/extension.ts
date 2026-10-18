@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { computeForecasts, Forecasts } from './controller/forecast';
 import { formatSummary, visibleUsage } from './controller/format';
 import { claimCrossing, crossings, pruneMarkers } from './controller/notifier';
+import { clearMute, muteChoices, muteFile, readMutedUntil, writeMute } from './controller/mute';
 import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
 import { exportFileName, forExport, toCsv, toJson } from './controller/history_export';
 import { HistoryView } from './controller/history_view';
@@ -25,9 +26,12 @@ function refreshIntervalMs(): number {
   return Math.min(3600, Math.max(30, seconds)) * 1000;
 }
 
-/** Tells once per window cycle and level; windows of VS Code share the markers, so only one of them shows it. */
+/**
+ * Tells once per window cycle and level; windows of VS Code share the markers, so only one of them shows it.
+ * While muted nothing is claimed: what is still true when the mute ends is told then.
+ */
 function notify(storageDir: string, account: string, usage: Usage, now: number): void {
-  if (!notificationsEnabled()) {
+  if (!notificationsEnabled() || readMutedUntil(muteFile(storageDir, account), now) !== undefined) {
     return;
   }
   const options = readOptions();
@@ -79,7 +83,9 @@ export function activate(context: vscode.ExtensionContext): void {
   const storageDir = context.globalStorageUri.fsPath;
   const account = accountId(configDir());
   pruneMarkers(storageDir, Date.now());
-  const statusBar = new StatusBar();
+  const mutePath = muteFile(storageDir, account);
+  const mutedUntil = () => (notificationsEnabled() ? readMutedUntil(mutePath, Date.now()) : undefined);
+  const statusBar = new StatusBar(mutedUntil);
   const cache = new SharedCache(cacheFile(context.globalStorageUri.fsPath, configDir()));
   const history = new History(historyFile(context.globalStorageUri.fsPath, configDir()));
   const historyView = new HistoryView(() => history.read());
@@ -132,7 +138,22 @@ export function activate(context: vscode.ExtensionContext): void {
     { dispose: () => clearInterval(timer) },
     vscode.commands.registerCommand('claudeUsage.refresh', () => tick(true)),
     vscode.commands.registerCommand('claudeUsage.showHistory', () => historyView.show()),
-    vscode.commands.registerCommand('claudeUsage.showMenu', showMenu),
+    vscode.commands.registerCommand('claudeUsage.showMenu', () => showMenu(mutedUntil)),
+    vscode.commands.registerCommand('claudeUsage.muteNotifications', async () => {
+      const pick = await vscode.window.showQuickPick(muteChoices(lastState.usage, readOptions(), Date.now()), { title: 'Mute notifications' });
+      if (pick && !writeMute(mutePath, pick.until)) {
+        void vscode.window.showErrorMessage('Claude Usage: could not save the mute.');
+      }
+      statusBar.render();
+    }),
+    vscode.commands.registerCommand('claudeUsage.unmuteNotifications', () => {
+      clearMute(mutePath);
+      statusBar.render();
+      // What crossed a threshold while muted and still holds is told now.
+      if (lastState.usage) {
+        notify(storageDir, account, lastState.usage, Date.now());
+      }
+    }),
     vscode.commands.registerCommand('claudeUsage.toggleExtendedView', toggleExtendedView),
     vscode.commands.registerCommand('claudeUsage.exportHistory', () => exportHistory(history)),
     vscode.commands.registerCommand('claudeUsage.copySummary', () => copySummary(lastState)),

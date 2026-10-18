@@ -162,6 +162,8 @@ export interface ViewOptions {
   windows: WindowsOption;
   thresholds: Thresholds;
   forecasts?: Forecasts;
+  /** When the notifications are muted until, if they are. */
+  mutedUntil?: number;
 }
 
 /** The usage the settings let the user see: selected windows, and the spend unless hidden. */
@@ -223,7 +225,8 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
   }
 
   const body = parts.length ? parts.join(' | ') : state.usage.spend ? 'spend hidden' : 'no data';
-  const tooltip = [formatTooltip(usage, now, options.forecasts), state.stale ? errorTooltip(state, now) : undefined]
+  const muted = options.mutedUntil !== undefined && options.mutedUntil > now ? `Notifications muted until ${formatResetTime(new Date(options.mutedUntil), now)}` : undefined;
+  const tooltip = [formatTooltip(usage, now, options.forecasts), muted, state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
   return { text: `${PREFIX} · ${state.stale ? '~' : ''}${body}`, tooltip, level: worstLevel(usage, options.thresholds) };

@@ -45,6 +45,14 @@
         "title": "Claude Usage: Toggle Extended View"
       },
       {
+        "command": "claudeUsage.muteNotifications",
+        "title": "Claude Usage: Mute Notifications…"
+      },
+      {
+        "command": "claudeUsage.unmuteNotifications",
+        "title": "Claude Usage: Unmute Notifications"
+      },
+      {
         "command": "claudeUsage.exportHistory",
         "title": "Claude Usage: Export History…"
       },
