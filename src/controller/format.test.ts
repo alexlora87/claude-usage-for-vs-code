@@ -94,11 +94,11 @@ describe('reset time', () => {
     expect(formatResetTime(new Date(2026, 9, 23, 22, 10), now)).toBe('Fri, Oct 23 at 22:10');
   });
 
-  it('renders one line per window with a middle dot', () => {
+  it('renders each window as its label over a bullet per detail', () => {
     const reset = new Date(2026, 9, 16, 18, 45);
     const tooltip = formatTooltip({ session: { percent: 1, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } }, now);
     expect(tooltip).toBe(
-      'Session (5hr) · resets today at 18:45  \nWeekly (7 day) · resets today at 18:45',
+      'Session (5hr)  \n• resets today at 18:45  \nWeekly (7 day)  \n• resets today at 18:45',
     );
   });
 
@@ -107,7 +107,7 @@ describe('reset time', () => {
     const usage = { session: { percent: 50, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } };
     const tooltip = formatTooltip(usage, now, { session: { fullAt: now + 80 * MIN }, weekly: { fullAt: now - 1 } });
     expect(tooltip).toBe(
-      'Session (5hr) · resets today at 18:45  \nSession (5hr) · at this pace, 100% in ~1h 20m  \nWeekly (7 day) · resets today at 18:45',
+      'Session (5hr)  \n• resets today at 18:45  \n• at this pace, 100% in ~1h 20m  \nWeekly (7 day)  \n• resets today at 18:45',
     );
   });
 
@@ -115,7 +115,7 @@ describe('reset time', () => {
     const reset = new Date(2026, 9, 16, 18, 45);
     const usage = { session: { percent: 50, resetsAt: reset }, weekly: { percent: 2, resetsAt: reset } };
     expect(formatTooltip(usage, now, { session: { endPercent: 72.4 }, weekly: { endPercent: 99.7 } })).toBe(
-      'Session (5hr) · resets today at 18:45  \nSession (5hr) · on pace to end at ~72%  \nWeekly (7 day) · resets today at 18:45  \nWeekly (7 day) · on pace to end at ~99%',
+      'Session (5hr)  \n• resets today at 18:45  \n• on pace to end at ~72%  \nWeekly (7 day)  \n• resets today at 18:45  \n• on pace to end at ~99%',
     );
   });
 
@@ -155,14 +155,14 @@ describe('reset time', () => {
 
   it('adds when the monthly limit is reached at this pace', () => {
     const spend = { used: 100, limit: 800, currency: 'USD', percent: 12.5, limitReached: false };
-    expect(formatTooltip({ spend }, now, { spend: now + 30 * DAY })).toContain('At this pace, the limit is reached in ~30d 0h');
-    expect(formatTooltip({ spend }, now)).not.toContain('At this pace');
+    expect(formatTooltip({ spend }, now, { spend: now + 30 * DAY })).toContain('• at this pace, the limit is reached in ~30d 0h');
+    expect(formatTooltip({ spend }, now)).not.toContain('at this pace');
   });
 
   it('omits lines without a reset time, and the whole tooltip when none has one', () => {
     const session = { percent: 1, resetsAt: new Date(2026, 9, 16, 18, 45) };
     expect(formatTooltip({ session, weekly: { percent: 2 } }, now)).toBe(
-      'Session (5hr) · resets today at 18:45',
+      'Session (5hr)  \n• resets today at 18:45',
     );
     expect(formatTooltip({ session: { percent: 1 } }, now)).toBeUndefined();
   });
@@ -209,7 +209,7 @@ describe('buildView', () => {
   it('shows only the spend when the account has no windows', () => {
     const view = buildView({ ...base, usage: { spend } }, compact, icon, now);
     expect(view.text).toBe('$(sparkle) Claude Usage · Credits $7.29 / $800.00 * 1%');
-    expect(view.tooltip).toBe('Monthly Credits · $7.29 of $800.00  \n$792.71 remaining · 0.9% used');
+    expect(view.tooltip).toBe('Monthly Credits  \n• $7.29 of $800.00  \n• $792.71 remaining · 0.9% used');
     expect(view.level).toBe('ok');
   });
 
