@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1
+
+### Changed
+
+- The hover shows each window and the monthly credits as a title with a bullet per detail, so the name is no longer repeated on every line.
+
 ## 1.4.0
 
 ### Added
