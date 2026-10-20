@@ -102,36 +102,41 @@ export function formatResetTime(date: Date, now: number): string {
 /** Below this time left, where a window ends up is no longer news. */
 const MIN_LEFT_MS = 10 * MINUTE;
 
-/** The pace line of a window: when it fills up, or the percent it is on pace to end at when it resets. */
-function paceLine(label: string, forecast: WindowForecast | undefined, resetsAt: Date, now: number): string[] {
+/** The pace of a window: when it fills up, or the percent it is on pace to end at when it resets. */
+function pace(forecast: WindowForecast | undefined, resetsAt: Date, now: number): string | undefined {
   if (!forecast) {
-    return [];
+    return undefined;
   }
   if ('fullAt' in forecast) {
-    return forecast.fullAt > now ? [`${label} · at this pace, 100% in ~${formatRemaining(forecast.fullAt - now, true)}`] : [];
+    return forecast.fullAt > now ? `at this pace, 100% in ~${formatRemaining(forecast.fullAt - now, true)}` : undefined;
   }
   // Never 100%: that would be the "fills up" line.
-  return resetsAt.getTime() - now >= MIN_LEFT_MS ? [`${label} · on pace to end at ~${Math.min(99, Math.round(forecast.endPercent))}%`] : [];
+  return resetsAt.getTime() - now >= MIN_LEFT_MS ? `on pace to end at ~${Math.min(99, Math.round(forecast.endPercent))}%` : undefined;
+}
+
+/** The lines of a window: its label over a bullet per detail. */
+function windowLines(label: string, resetsAt: Date, forecast: WindowForecast | undefined, now: number): string[] {
+  const paceText = pace(forecast, resetsAt, now);
+  return [label, `• resets ${formatResetTime(resetsAt, now)}`, ...(paceText ? [`• ${paceText}`] : [])];
 }
 
 /** Markdown for the hover: one line per window, joined with a hard line break. */
 export function formatTooltip(usage: Usage, now: number, forecasts: Forecasts = {}): string | undefined {
   const lines: string[] = [];
   if (usage.session?.resetsAt) {
-    lines.push(`Session (5hr) · resets ${formatResetTime(usage.session.resetsAt, now)}`);
-    lines.push(...paceLine('Session (5hr)', forecasts.session, usage.session.resetsAt, now));
+    lines.push(...windowLines('Session (5hr)', usage.session.resetsAt, forecasts.session, now));
   }
   if (usage.weekly?.resetsAt) {
-    lines.push(`Weekly (7 day) · resets ${formatResetTime(usage.weekly.resetsAt, now)}`);
-    lines.push(...paceLine('Weekly (7 day)', forecasts.weekly, usage.weekly.resetsAt, now));
+    lines.push(...windowLines('Weekly (7 day)', usage.weekly.resetsAt, forecasts.weekly, now));
   }
   if (usage.spend) {
     const { used, limit, currency, percent, limitReached } = usage.spend;
     const remaining = formatMoney(Math.max(0, limit - used), currency);
-    lines.push(`Monthly Credits · ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
-    lines.push(`${remaining} remaining · ${percent.toFixed(1)}% used`);
+    lines.push('Monthly Credits');
+    lines.push(`• ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
+    lines.push(`• ${remaining} remaining · ${percent.toFixed(1)}% used`);
     if (forecasts.spend !== undefined && forecasts.spend > now && !limitReached) {
-      lines.push(`At this pace, the limit is reached in ~${formatRemaining(forecasts.spend - now, true)}`);
+      lines.push(`• at this pace, the limit is reached in ~${formatRemaining(forecasts.spend - now, true)}`);
     }
   }
   return lines.length ? lines.join('  \n') : undefined;
