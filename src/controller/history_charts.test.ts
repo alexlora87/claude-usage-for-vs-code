@@ -81,6 +81,21 @@ describe('session panel', () => {
     }
   });
 
+  it('draws the session in progress as wide as an ended one', () => {
+    const widths = [...renderPanels(samples, now, ['session']).matchAll(/<rect class="bar(?: hot)?" x="[\d.]+" y="[\d.]+" width="([\d.]+)"/g)].map((m) => m[1]);
+    expect(widths).toHaveLength(2);
+    expect(widths[1]).toBe(widths[0]);
+  });
+
+  it('keeps the day labels inside the chart', () => {
+    const late = new Date(2026, 9, 16, 23, 50).getTime();
+    // The session resets just after midnight, so that day's line is at the right edge.
+    const html = renderPanels([session(late - HOUR, 40, late + 20 * MIN)], late, ['session']);
+    const xs = [...html.matchAll(/<text class="axis" x="([\d.]+)" y="[\d.]+" text-anchor="middle">/g)].map((m) => Number(m[1]));
+    expect(xs).toHaveLength(8);
+    expect(Math.max(...xs)).toBe(720 - 22);
+  });
+
   it('does not duplicate a session when a stale reading comes back to an older reset time', () => {
     const stale = [...samples.slice(0, 2), samples[2], session(now - 4 * HOUR, 10, firstEnd), samples[3]];
     expect(renderPanels(stale, now, [...all]).match(/<rect class="bar(?: hot)?"/g)).toHaveLength(2);
