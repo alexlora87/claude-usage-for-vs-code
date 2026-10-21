@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.2
+
+### Fixed
+
+- The session panel of the history no longer cuts the session in progress to a thin bar at the right edge, and the last day label is no longer cut.
+
 ## 1.4.1
 
 ### Changed

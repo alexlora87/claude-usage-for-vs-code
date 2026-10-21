@@ -18,6 +18,8 @@ const HOT_AT = 90;
 
 const WIDTH = 720;
 const PLOT = { left: 40, right: 12, top: 12, bottom: 28 };
+/** About half the width of a day label, so one near the right edge is not cut. */
+const HALF_DAY_LABEL = 22;
 
 export type ChartSize = 'small' | 'medium' | 'large';
 
@@ -147,7 +149,7 @@ function axes(s: Scale, start: number, end: number): string {
   for (; midnight.getTime() <= end; midnight.setDate(midnight.getDate() + 1)) {
     const t = midnight.getTime();
     const label = midnight.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
-    days.push(`<line class="grid" x1="${f(s.x(t))}" x2="${f(s.x(t))}" y1="${PLOT.top}" y2="${height - PLOT.bottom}"/><text class="axis" x="${f(s.x(t))}" y="${height - 8}" text-anchor="middle">${escapeHtml(label)}</text>`);
+    days.push(`<line class="grid" x1="${f(s.x(t))}" x2="${f(s.x(t))}" y1="${PLOT.top}" y2="${height - PLOT.bottom}"/><text class="axis" x="${f(Math.min(s.x(t), WIDTH - HALF_DAY_LABEL))}" y="${height - 8}" text-anchor="middle">${escapeHtml(label)}</text>`);
   }
   return grid + days.join('');
 }
@@ -265,11 +267,13 @@ function sessionPanel(samples: Sample[], now: number, layout: Layout): string {
     return '';
   }
   const start = now - RANGE_MS;
-  const s = scale(start, now, layout);
+  // Up to the reset of the session in progress, so its bar is as wide as the others.
+  const end = Math.max(now, ...sessions.map((c) => c.end));
+  const s = scale(start, end, layout);
   const bars = sessions
     .map((c) => {
       const x0 = s.x(Math.max(c.start, start)) + 1;
-      const x1 = s.x(Math.min(c.end, now)) - 1;
+      const x1 = s.x(c.end) - 1;
       // At least 2 px, so a session that stayed at 0 % is still a bar with its tooltip.
       const height = Math.max(s.y(0) - s.y(c.peak), 2);
       const text = c.end > now ? `Session in progress · ${Math.round(c.peak)}% so far` : `Session that ended ${formatTime(c.end)} · peak ${Math.round(c.peak)}%`;
@@ -287,7 +291,7 @@ function sessionPanel(samples: Sample[], now: number, layout: Layout): string {
     'Sessions (5hr)',
     `Last 7 days · ${count}, ${full} at ${HOT_AT}% or more`,
     `Bar chart of the peak of each session in the last 7 days: ${count}, ${full} reached ${HOT_AT}% or more, the highest peak was ${highest}%.`,
-    (full ? HATCH : '') + axes(s, start, now) + bars,
+    (full ? HATCH : '') + axes(s, start, end) + bars,
     legend,
     layout.height,
   );
