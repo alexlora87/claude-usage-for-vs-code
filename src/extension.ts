@@ -5,7 +5,7 @@ import { computeForecasts, Forecasts } from './controller/forecast';
 import { formatSummary, visibleUsage } from './controller/format';
 import { claimUnlessMuted, crossings, pruneMarkers } from './controller/notifier';
 import { clearMute, muteChoices, muteFile, readMutedUntil, writeMute } from './controller/mute';
-import { notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
+import { criticalModalEnabled, notificationsEnabled, readOptions, SETTINGS_KEYS } from './controller/settings';
 import { exportFileName, forExport, toCsv, toJson } from './controller/history_export';
 import { HistoryView } from './controller/history_view';
 import { openSettings, showMenu, toggleExtendedView } from './controller/menu';
@@ -38,7 +38,22 @@ function notify(storageDir: string, account: string, usage: Usage, now: number):
   const muted = readMutedUntil(muteFile(storageDir, account), now) !== undefined;
   for (const crossing of claimUnlessMuted(storageDir, account, crossings(visibleUsage(usage, options), options.thresholds, now), muted)) {
     const text = `Claude Usage: ${crossing.message}`;
-    void (crossing.level === 'critical' ? vscode.window.showErrorMessage(text) : vscode.window.showWarningMessage(text));
+    if (crossing.level !== 'critical') {
+      void vscode.window.showWarningMessage(text);
+    } else if (criticalModalEnabled()) {
+      void showCriticalModal(text);
+    } else {
+      void vscode.window.showErrorMessage(text);
+    }
+  }
+}
+
+async function showCriticalModal(text: string): Promise<void> {
+  const mute: vscode.MessageItem = { title: 'Mute notifications' };
+  const close: vscode.MessageItem = { title: 'Close', isCloseAffordance: true };
+  const pick = await vscode.window.showErrorMessage(text, { modal: true }, mute, close);
+  if (pick === mute) {
+    void vscode.commands.executeCommand('claudeUsage.muteNotifications');
   }
 }
 

@@ -25,6 +25,7 @@ describe('settings schema', () => {
       'barSize',
       'showSpend',
       'notifications',
+      'criticalModal',
       'warningThreshold',
       'criticalThreshold',
       'historyChartSize',
