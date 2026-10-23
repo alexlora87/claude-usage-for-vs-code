@@ -2,7 +2,7 @@
   "name": "claude-usage-vscode",
   "displayName": "Claude Usage for VS Code",
   "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar, and the monthly spend on accounts billed by money.",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "publisher": "alexlora87",
   "icon": "resources/icon.png",
   "license": "MIT",
@@ -155,8 +155,14 @@
           "default": true,
           "description": "Show a notification once per window cycle when usage reaches the warning or the critical threshold."
         },
-        "claudeUsage.warningThreshold": {
+        "claudeUsage.criticalModal": {
           "order": 8,
+          "type": "boolean",
+          "default": false,
+          "description": "Show the critical notification as a modal dialog in the middle of the window, which blocks VS Code until it is closed. Needs notifications to be on."
+        },
+        "claudeUsage.warningThreshold": {
+          "order": 9,
           "type": "number",
           "default": 70,
           "minimum": 1,
@@ -164,7 +170,7 @@
           "description": "Percentage from which the status bar turns yellow. Must be lower than the critical threshold."
         },
         "claudeUsage.criticalThreshold": {
-          "order": 9,
+          "order": 10,
           "type": "number",
           "default": 90,
           "minimum": 2,
@@ -172,7 +178,7 @@
           "description": "Percentage from which the status bar turns red."
         },
         "claudeUsage.historyChartSize": {
-          "order": 10,
+          "order": 11,
           "type": "string",
           "enum": [
             "small",

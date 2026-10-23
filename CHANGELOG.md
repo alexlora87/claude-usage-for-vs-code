@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+
+- `claudeUsage.criticalModal` (off by default): shows the critical notification as a modal dialog, with **Mute notifications** and **Close** buttons, instead of a toast.
+
 ## 1.4.2
 
 ### Fixed

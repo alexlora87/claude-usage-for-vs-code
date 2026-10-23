@@ -4,7 +4,7 @@ import { ChartSize, chartSizeFrom } from './history_charts';
 import { thresholdsFrom, ViewOptions, WindowsOption } from './format';
 import { IconStyle, iconStyleFrom } from './icons';
 
-export const SETTINGS_KEYS = ['extendedView', 'showSpend', 'windows', 'indicator', 'barSize', 'warningThreshold', 'criticalThreshold', 'notifications', 'historyChartSize'];
+export const SETTINGS_KEYS = ['extendedView', 'showSpend', 'windows', 'indicator', 'barSize', 'warningThreshold', 'criticalThreshold', 'notifications', 'criticalModal', 'historyChartSize'];
 
 export function readOptions(forecasts?: Forecasts): ViewOptions {
   const config = vscode.workspace.getConfiguration('claudeUsage');
@@ -28,4 +28,8 @@ export function readChartSize(): ChartSize {
 
 export function notificationsEnabled(): boolean {
   return vscode.workspace.getConfiguration('claudeUsage').get<boolean>('notifications', true);
+}
+
+export function criticalModalEnabled(): boolean {
+  return vscode.workspace.getConfiguration('claudeUsage').get<boolean>('criticalModal', false);
 }
