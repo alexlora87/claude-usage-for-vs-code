@@ -4,7 +4,7 @@
 
 ### Added
 
-- Spanish (Latin American): when the VS Code display language is Spanish, the status bar, the hover, the notifications, the menu, the history, the commands and the settings are shown in Spanish. The compact `5h` and `7d` labels stay the same.
+- Translations into Spanish (Latin American), Brazilian Portuguese, Japanese, Korean, German and French: when VS Code is in one of these languages, the status bar, the hover, the notifications, the menu, the history, the commands and the settings follow it, with dates in that language. The compact `5h` and `7d` labels stay the same.
 
 ## 1.5.1
 

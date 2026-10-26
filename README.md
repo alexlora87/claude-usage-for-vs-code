@@ -28,7 +28,7 @@ With `claudeUsage.extendedView` enabled:
 - **Claude Usage: Copy Usage Summary** (also in the menu) puts the usage on the clipboard as one line, for example `Session (5hr) 42% · resets in 2h 10m | Weekly (7 day) 71% · resets in 2d 4h`. It follows `windows` and `showSpend`.
 - **Claude Usage: Mute Notifications…** (also in the menu) silences the notifications for an hour, or until the session or the weekly window resets. All your VS Code windows follow it, and the hover says until when. What is still above a threshold is notified at the next refresh after the mute ends. **Claude Usage: Unmute Notifications** ends it earlier.
 - **Claude Usage: Export History…** saves the stored readings as CSV or JSON, whichever file name you choose. The spend is left out when `showSpend` is `never`.
-- Shown in Spanish when VS Code is in Spanish (the official language pack): the status bar, the hover, the notifications, the menu, the history and the settings. Any other display language shows English.
+- Translated into Spanish, Brazilian Portuguese, Japanese, Korean, German and French: the status bar, the hover, the notifications, the menu, the history, the commands and the settings follow the VS Code display language (the official language pack). Any other language shows English.
 
 ## Settings
 
