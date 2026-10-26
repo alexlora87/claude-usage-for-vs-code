@@ -47,10 +47,15 @@ describe('commands', () => {
 describe('manifest translations', () => {
   const manifest = readFileSync('package.json', 'utf8');
   const english = JSON.parse(readFileSync('package.nls.json', 'utf8'));
+  const spanish = JSON.parse(readFileSync('package.nls.es.json', 'utf8'));
 
   it('defines every %key% of package.json in English', () => {
     const keys = [...manifest.matchAll(/"%([^%"]+)%"/g)].map((match) => match[1]);
     expect(keys.filter((key) => !(key in english))).toEqual([]);
     expect(Object.keys(english).filter((key) => !keys.includes(key))).toEqual([]);
+  });
+
+  it('translates every key into Spanish', () => {
+    expect(Object.keys(spanish).sort()).toEqual(Object.keys(english).sort());
   });
 });

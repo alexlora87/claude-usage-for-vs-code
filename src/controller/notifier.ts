@@ -1,5 +1,6 @@
 import { mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { t } from '../shared/l10n';
 import { Usage } from '../shared/types';
 import { formatMoney, formatRemaining, levelFor, Thresholds } from './format';
 
@@ -33,21 +34,21 @@ export function crossings(usage: Usage, thresholds: Thresholds, now: number): Cr
     }
   };
   const { session, weekly, spend } = usage;
-  const resets = (date: Date | undefined, longWindow: boolean) => (date ? ` Resets in ${formatRemaining(date.getTime() - now, longWindow)}.` : '');
+  const resets = (date: Date | undefined, longWindow: boolean) => (date ? ` ${t('Resets in')} ${formatRemaining(date.getTime() - now, longWindow)}.` : '');
   if (session) {
     add('session', session.percent, session.resetsAt ? minuteOf(session.resetsAt) : 'unknown',
-      `Your 5-hour session is at ${Math.round(session.percent)}%.${resets(session.resetsAt, false)}`, false, session.resetsAt);
+      `${t('Your 5-hour session is at {0}%.', Math.round(session.percent))}${resets(session.resetsAt, false)}`, false, session.resetsAt);
   }
   if (weekly) {
     add('weekly', weekly.percent, weekly.resetsAt ? minuteOf(weekly.resetsAt) : 'unknown',
-      `Your 7-day window is at ${Math.round(weekly.percent)}%.${resets(weekly.resetsAt, true)}`, false, weekly.resetsAt);
+      `${t('Your 7-day window is at {0}%.', Math.round(weekly.percent))}${resets(weekly.resetsAt, true)}`, false, weekly.resetsAt);
   }
   if (spend) {
     // The API gives no reset date for the spend: the UTC calendar month only deduplicates, it is never shown.
     const month = new Date(now);
-    const amounts = `${formatMoney(spend.used, spend.currency)} of ${formatMoney(spend.limit, spend.currency)}`;
+    const amounts = t('{0} of {1}', formatMoney(spend.used, spend.currency), formatMoney(spend.limit, spend.currency));
     add('spend', spend.percent, `${month.getUTCFullYear()}-${month.getUTCMonth() + 1}`,
-      spend.limitReached ? `Monthly credits limit reached (${amounts}).` : `Monthly credits at ${Math.round(spend.percent)}% (${amounts}).`,
+      spend.limitReached ? t('Monthly credits limit reached ({0}).', amounts) : t('Monthly credits at {0}% ({1}).', Math.round(spend.percent), amounts),
       spend.limitReached);
   }
   return result;

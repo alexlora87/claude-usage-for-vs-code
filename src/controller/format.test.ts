@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatSummary, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
+import { setLanguage } from '../shared/l10n';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -316,5 +317,47 @@ describe('formatMoney', () => {
     expect(formatMoney(7.29, 'USD')).toBe('$7.29');
     expect(formatMoney(800, 'USD')).toBe('$800.00');
     expect(formatMoney(7.5, 'XXXX')).toBe('7.50 XXXX');
+  });
+});
+
+describe('in Spanish', () => {
+  const now = new Date(2026, 9, 16, 12, 0).getTime();
+  const usage = {
+    session: { percent: 32, resetsAt: new Date(now + 7 * MIN) },
+    weekly: { percent: 4, resetsAt: new Date(now + 6 * DAY + 21 * HOUR) },
+  };
+  const options = { extended: true, showSpend: true, windows: 'both' as const, thresholds: DEFAULT_THRESHOLDS };
+  const spend = { used: 7.29, limit: 800, currency: 'USD', percent: 0.91, limitReached: true };
+
+  beforeEach(() => setLanguage('es'));
+  afterEach(() => setLanguage('en'));
+
+  it('renders the extended view, keeping the compact abbreviations', () => {
+    expect(buildView({ stale: false, loading: false, usage }, options, () => '*', now).text).toBe(
+      '$(sparkle) Claude Usage · Sesión (5 h) * 32% · Se reinicia en 0h 7m | Semanal (7 días) * 4% · Se reinicia en 6d 21h',
+    );
+    expect(buildView({ stale: false, loading: false, usage }, { ...options, extended: false }, () => '*', now).text).toBe(
+      '$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h',
+    );
+  });
+
+  it('formats the reset time with Spanish day and month names', () => {
+    expect(formatResetTime(new Date(2026, 9, 16, 18, 45), now)).toBe('hoy a las 18:45');
+    expect(formatResetTime(new Date(2026, 9, 17, 3, 0), now)).toBe('mañana a las 03:00');
+    expect(formatResetTime(new Date(2026, 9, 23, 22, 10), now)).toBe('vie, 23 oct a las 22:10');
+  });
+
+  it('writes the tooltip and the summary', () => {
+    expect(formatTooltip({ session: usage.session, spend }, now)).toBe(
+      'Sesión (5 h)  \n• se reinicia hoy a las 12:07  \nCréditos mensuales  \n• $7.29 de $800.00 · límite alcanzado  \n• $792.71 restantes · 0.9% usado',
+    );
+    expect(formatSummary({ session: usage.session }, options, now)).toBe('Sesión (5 h) 32% · se reinicia en 0h 7m');
+  });
+
+  it('explains errors', () => {
+    const view = buildView({ stale: false, loading: false, error: { kind: 'offline', message: 'x' }, retryAt: now + 30_000 }, options, () => '*', now);
+    expect(view.text).toBe('$(sparkle) Claude Usage: Sin conexión');
+    expect(view.tooltip).toContain('Reintentando en 30s');
+    expect(buildView({ stale: false, loading: true }, options, () => '*', now).text).toBe('$(sparkle) Claude Usage: cargando…');
   });
 });

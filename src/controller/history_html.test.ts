@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Sample } from '../engine/history';
+import { setLanguage } from '../shared/l10n';
 import { renderHistoryHtml } from './history_html';
 
 const MIN = 60_000;
@@ -54,5 +55,23 @@ describe('renderHistoryHtml', () => {
     expect(html).toContain('<style nonce="abc">');
     expect(html).not.toContain('<script');
     expect(html).not.toMatch(/style="/);
+  });
+});
+
+describe('renderHistoryHtml in Spanish', () => {
+  beforeEach(() => setLanguage('es'));
+  afterEach(() => setLanguage('en'));
+
+  it('writes the page and the charts in Spanish', () => {
+    const html = renderHistoryHtml([session(now - 20 * MIN, 10), session(now - 10 * MIN, 12)], now, 'abc');
+    expect(html).toContain('<html lang="es">');
+    expect(html).toContain('<h1>Historial de Claude Usage</h1>');
+    expect(html).toContain('Sesiones (5 h)');
+    expect(html).toContain('Sesión en curso · 12% hasta ahora');
+    expect(html).toContain('Últimos 7 días · 1 sesión, 0 al 90% o más');
+  });
+
+  it('says there is no history yet', () => {
+    expect(renderHistoryHtml([], now, 'abc')).toContain('Todavía no hay historial');
   });
 });

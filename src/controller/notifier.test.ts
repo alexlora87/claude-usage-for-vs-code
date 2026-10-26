@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_THRESHOLDS } from './format';
+import { setLanguage } from '../shared/l10n';
 import { claim, claimCrossing, claimUnlessMuted, crossings, markerName, pruneMarkers } from './notifier';
 
 const MIN = 60_000;
@@ -118,5 +119,23 @@ describe('markers', () => {
     expect(existsSync(join(dir, 'notified-old'))).toBe(false);
     expect(existsSync(join(dir, 'notified-new'))).toBe(true);
     expect(existsSync(join(dir, 'cache-abc.json'))).toBe(true);
+  });
+});
+
+describe('crossings in Spanish', () => {
+  beforeEach(() => setLanguage('es'));
+  afterEach(() => setLanguage('en'));
+
+  it('writes the messages in Spanish', () => {
+    const usage = {
+      session: { percent: 95.4, resetsAt: new Date(now + 40 * MIN) },
+      weekly: { percent: 72, resetsAt: new Date(now + 2 * DAY) },
+      spend: { ...spend, limitReached: true },
+    };
+    expect(crossings(usage, DEFAULT_THRESHOLDS, now).map((c) => c.message)).toEqual([
+      'Tu sesión de 5 horas está al 95%. Se reinicia en 0h 40m.',
+      'Tu ventana de 7 días está al 72%. Se reinicia en 2d 0h.',
+      'Se alcanzó el límite de créditos mensuales ($600.00 de $800.00).',
+    ]);
   });
 });

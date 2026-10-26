@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { t } from '../shared/l10n';
 import { UsageError } from '../shared/types';
 
 const run = promisify(execFile);
@@ -57,10 +58,10 @@ async function fromKeychain(): Promise<Credentials | undefined> {
 export async function readAccessToken(now = Date.now()): Promise<string> {
   const credentials = (await fromFile()) ?? (await fromKeychain());
   if (!credentials) {
-    throw new UsageError('no-credentials', 'Claude Code credentials not found; sign in to Claude Code first');
+    throw new UsageError('no-credentials', t('Claude Code credentials not found; sign in to Claude Code first'));
   }
   if (credentials.expiresAt !== undefined && credentials.expiresAt <= now) {
-    throw new UsageError('token-expired', 'The Claude Code token expired; open Claude Code to refresh it');
+    throw new UsageError('token-expired', t('The Claude Code token expired; open Claude Code to refresh it'));
   }
   return credentials.token;
 }

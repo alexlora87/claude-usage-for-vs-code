@@ -1,3 +1,4 @@
+import { t } from '../shared/l10n';
 import { Spend, Usage, UsageError, UsageWindow } from '../shared/types';
 
 const URL = 'https://api.anthropic.com/api/oauth/usage';
@@ -76,7 +77,7 @@ export function parseUsage(body: unknown): Usage {
     spend: toSpend(data?.extra_usage),
   };
   if (!usage.session && !usage.weekly && !usage.spend) {
-    throw new UsageError('unknown', 'Unexpected usage response format');
+    throw new UsageError('unknown', t('Unexpected usage response format'));
   }
   return usage;
 }
@@ -99,16 +100,16 @@ export async function fetchUsage(token: string, fetchFn: Fetch = fetch): Promise
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch {
-    throw new UsageError('offline', 'Could not reach the Anthropic API');
+    throw new UsageError('offline', t('Could not reach the Anthropic API'));
   }
   if (response.status === 429) {
-    throw new UsageError('rate-limited', 'Rate limited by the API', parseRetryAfter(response.headers.get('retry-after')));
+    throw new UsageError('rate-limited', t('Rate limited by the API'), parseRetryAfter(response.headers.get('retry-after')));
   }
   if (response.status === 401 || response.status === 403) {
-    throw new UsageError('unauthorized', 'Claude Code credentials were rejected; open Claude Code to sign in again');
+    throw new UsageError('unauthorized', t('Claude Code credentials were rejected; open Claude Code to sign in again'));
   }
   if (!response.ok) {
-    throw new UsageError('unknown', `Usage request failed (HTTP ${response.status})`);
+    throw new UsageError('unknown', t('Usage request failed (HTTP {0})', response.status));
   }
   return parseUsage(await response.json());
 }
