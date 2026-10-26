@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import * as vscode from 'vscode';
+import { t } from '@vscode/l10n';
 import { Sample } from '../engine/history';
-import { t } from '../shared/l10n';
 import { renderHistoryHtml, SeriesKey } from './history_html';
 import { readChartSize, readOptions } from './settings';
 

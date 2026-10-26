@@ -1,6 +1,7 @@
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import * as vscode from 'vscode';
+import { t } from '@vscode/l10n';
 import { computeForecasts, Forecasts } from './controller/forecast';
 import { formatSummary, visibleUsage } from './controller/format';
 import { claimUnlessMuted, crossings, pruneMarkers } from './controller/notifier';
@@ -15,7 +16,7 @@ import { UsageScheduler } from './engine/scheduler';
 import { History, historyFile } from './engine/history';
 import { accountId, cacheFile, SharedCache } from './engine/shared_cache';
 import { fetchUsage } from './engine/usage_api';
-import { dateLocale, setLanguage, t } from './shared/l10n';
+import { dateLocale, setLanguage } from './shared/l10n';
 import { Usage } from './shared/types';
 import type { ViewState } from './engine/scheduler';
 
@@ -101,7 +102,7 @@ async function exportHistory(history: History): Promise<void> {
 
 export function activate(context: vscode.ExtensionContext): void {
   // VS Code reloads the window when the display language changes, so reading it once is enough.
-  setLanguage(vscode.env.language);
+  setLanguage(vscode.env.language, vscode.l10n.bundle);
   const storageDir = context.globalStorageUri.fsPath;
   const account = accountId(configDir());
   pruneMarkers(storageDir, Date.now());

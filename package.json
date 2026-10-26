@@ -16,6 +16,7 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
+  "l10n": "./l10n",
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/vscode": "1.90.0",
@@ -951,5 +952,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/alexlora87/claude-usage-for-vs-code.git"
+  },
+  "dependencies": {
+    "@vscode/l10n": "^0.0.18"
   }
 }

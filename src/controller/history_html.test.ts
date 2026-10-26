@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Sample } from '../engine/history';
 import { setLanguage } from '../shared/l10n';
 import { renderHistoryHtml } from './history_html';
+
+const SPANISH = JSON.parse(readFileSync('l10n/bundle.l10n.es.json', 'utf8'));
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -59,8 +62,8 @@ describe('renderHistoryHtml', () => {
 });
 
 describe('renderHistoryHtml in Spanish', () => {
-  beforeEach(() => setLanguage('es'));
-  afterEach(() => setLanguage('en'));
+  beforeEach(() => setLanguage('es', SPANISH));
+  afterEach(() => setLanguage('en', undefined));
 
   it('writes the page and the charts in Spanish', () => {
     const html = renderHistoryHtml([session(now - 20 * MIN, 10), session(now - 10 * MIN, 12)], now, 'abc');

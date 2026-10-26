@@ -1,5 +1,6 @@
+import { t } from '@vscode/l10n';
 import { Sample } from '../engine/history';
-import { dateLocale, t } from '../shared/l10n';
+import { dateLocale } from '../shared/l10n';
 import { computeForecasts } from './forecast';
 
 const MINUTE = 60_000;

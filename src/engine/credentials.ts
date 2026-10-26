@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { t } from '../shared/l10n';
+import { t } from '@vscode/l10n';
 import { UsageError } from '../shared/types';
 
 const run = promisify(execFile);

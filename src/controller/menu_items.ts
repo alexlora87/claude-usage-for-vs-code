@@ -1,4 +1,4 @@
-import { t } from '../shared/l10n';
+import { t } from '@vscode/l10n';
 import { formatResetTime } from './format';
 
 export interface MenuItem {

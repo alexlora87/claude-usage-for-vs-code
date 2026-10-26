@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildView, DEFAULT_THRESHOLDS, formatMoney, formatRemaining, formatResetTime, formatSummary, formatTooltip, formatWindow, levelFor, thresholdsFrom, worstLevel } from './format';
 import { setLanguage } from '../shared/l10n';
+
+const SPANISH = JSON.parse(readFileSync('l10n/bundle.l10n.es.json', 'utf8'));
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -329,8 +332,8 @@ describe('in Spanish', () => {
   const options = { extended: true, showSpend: true, windows: 'both' as const, thresholds: DEFAULT_THRESHOLDS };
   const spend = { used: 7.29, limit: 800, currency: 'USD', percent: 0.91, limitReached: true };
 
-  beforeEach(() => setLanguage('es'));
-  afterEach(() => setLanguage('en'));
+  beforeEach(() => setLanguage('es', SPANISH));
+  afterEach(() => setLanguage('en', undefined));
 
   it('renders the extended view, keeping the compact abbreviations', () => {
     expect(buildView({ stale: false, loading: false, usage }, options, () => '*', now).text).toBe(

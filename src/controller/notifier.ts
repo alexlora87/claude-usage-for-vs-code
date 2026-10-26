@@ -1,6 +1,6 @@
 import { mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { t } from '../shared/l10n';
+import { t } from '@vscode/l10n';
 import { Usage } from '../shared/types';
 import { formatMoney, formatRemaining, levelFor, Thresholds } from './format';
 

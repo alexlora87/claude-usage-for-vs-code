@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { t } from '../shared/l10n';
+import { t } from '@vscode/l10n';
 import { Usage } from '../shared/types';
 import { formatResetTime, ViewOptions, visibleUsage } from './format';
 

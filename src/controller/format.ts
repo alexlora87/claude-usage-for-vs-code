@@ -1,6 +1,7 @@
+import { t } from '@vscode/l10n';
 import type { ViewState } from '../engine/scheduler';
 import type { Forecasts, WindowForecast } from './forecast';
-import { dateLocale, t } from '../shared/l10n';
+import { dateLocale } from '../shared/l10n';
 import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';

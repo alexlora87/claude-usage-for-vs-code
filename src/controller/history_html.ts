@@ -1,5 +1,6 @@
+import { t } from '@vscode/l10n';
 import { Sample } from '../engine/history';
-import { language, t } from '../shared/l10n';
+import { language } from '../shared/l10n';
 import { ChartSize, escapeHtml, renderPanels, SeriesKey } from './history_charts';
 
 export type { SeriesKey } from './history_charts';

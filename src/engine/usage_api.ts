@@ -1,4 +1,4 @@
-import { t } from '../shared/l10n';
+import { t } from '@vscode/l10n';
 import { Spend, Usage, UsageError, UsageWindow } from '../shared/types';
 
 const URL = 'https://api.anthropic.com/api/oauth/usage';
