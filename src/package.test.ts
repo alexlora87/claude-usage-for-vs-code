@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { menuItems } from './controller/menu_items';
 
@@ -47,7 +47,8 @@ describe('commands', () => {
 describe('manifest translations', () => {
   const manifest = readFileSync('package.json', 'utf8');
   const english = JSON.parse(readFileSync('package.nls.json', 'utf8'));
-  const spanish = JSON.parse(readFileSync('package.nls.es.json', 'utf8'));
+  const translated = readdirSync('.').flatMap((file) => file.match(/^package\.nls\.(.+)\.json$/)?.[1] ?? []);
+  const bundles = readdirSync('l10n').flatMap((file) => file.match(/^bundle\.l10n\.(.+)\.json$/)?.[1] ?? []);
 
   it('defines every %key% of package.json in English', () => {
     const keys = [...manifest.matchAll(/"%([^%"]+)%"/g)].map((match) => match[1]);
@@ -55,7 +56,15 @@ describe('manifest translations', () => {
     expect(Object.keys(english).filter((key) => !keys.includes(key))).toEqual([]);
   });
 
-  it('translates every key into Spanish', () => {
-    expect(Object.keys(spanish).sort()).toEqual(Object.keys(english).sort());
+  it('translates every key into each language', () => {
+    expect(translated.length).toBeGreaterThan(0);
+    for (const language of translated) {
+      expect(Object.keys(JSON.parse(readFileSync(`package.nls.${language}.json`, 'utf8'))).sort(), language).toEqual(Object.keys(english).sort());
+    }
+  });
+
+  // Each part is named after the language pack ID (es, pt-br…): VS Code loads the bundle only on an exact match.
+  it('ships the manifest and the bundle of the same languages', () => {
+    expect(translated.sort()).toEqual(bundles.sort());
   });
 });
