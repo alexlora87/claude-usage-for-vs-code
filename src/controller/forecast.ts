@@ -29,7 +29,8 @@ interface Point {
 
 const WINDOWS = {
   session: { lookbackMs: HOUR, minSpanMs: 20 * MINUTE },
-  weekly: { lookbackMs: 48 * HOUR, minSpanMs: 6 * HOUR },
+  // A quiet weekend does not mean the rest of the week stays quiet: the pace never drops below the cycle's average.
+  weekly: { lookbackMs: 48 * HOUR, minSpanMs: 6 * HOUR, cycleMs: 7 * 24 * HOUR },
 } as const;
 
 /** Least-squares slope in value per ms (zero or negative when idle), or undefined when the points are too few or span too little. */
@@ -71,7 +72,8 @@ function forecastWindow(samples: Sample[], key: 'session' | 'weekly', usage: Usa
   if (!current || resetsAt === undefined || resetsAt <= now || current.percent >= 100) {
     return undefined;
   }
-  const { lookbackMs, minSpanMs } = WINDOWS[key];
+  const config = WINDOWS[key];
+  const { lookbackMs, minSpanMs } = config;
   const points: Point[] = samples.flatMap((s) => {
     const point = s[key];
     const sameCycle = point?.resetsAt !== undefined && Math.abs(point.resetsAt - resetsAt) <= CYCLE_TOLERANCE_MS;
@@ -82,9 +84,12 @@ function forecastWindow(samples: Sample[], key: 'session' | 'weekly', usage: Usa
   if (pace === undefined) {
     return undefined;
   }
-  // An idle window (zero or slightly negative slope) stays where it is. Everything is
-  // anchored to the current value: steadier than the regression intercept with integer-like steps.
-  const perMs = Math.max(0, pace);
+  // The cycle starts at 0 %, so its average pace is the current value over the time elapsed.
+  const cycleStart = 'cycleMs' in config ? resetsAt - config.cycleMs : now;
+  const average = now > cycleStart ? current.percent / (now - cycleStart) : 0;
+  // An idle window (zero or slightly negative slope) stays where it is, unless its cycle keeps an average pace. Everything
+  // is anchored to the current value: steadier than the regression intercept with integer-like steps.
+  const perMs = Math.max(0, pace, average);
   const fullAt = perMs > 0 ? now + (100 - current.percent) / perMs : Infinity;
   return fullAt < resetsAt ? { fullAt } : { endPercent: current.percent + perMs * (resetsAt - now) };
 }

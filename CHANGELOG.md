@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1
+
+### Fixed
+
+- The weekly projection no longer assumes an idle stretch, like a quiet weekend, lasts until the reset: the pace never drops below the cycle's average so far.
+
 ## 1.5.0
 
 ### Added

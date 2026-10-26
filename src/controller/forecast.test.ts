@@ -89,7 +89,13 @@ describe('weekly forecast', () => {
   it('needs 6 hours of readings, even when usage is idle', () => {
     const idle = (hours: number) => [...Array(hours).keys()].map((i) => weeklySample(now - (hours - i) * HOUR, 20));
     expect(computeForecasts(idle(5), weeklyUsage(20), now).weekly).toBeUndefined();
-    expect(endPercent(computeForecasts(idle(6), weeklyUsage(20), now).weekly)).toBe(20);
+    expect(computeForecasts(idle(6), weeklyUsage(20), now).weekly).toBeDefined();
+  });
+
+  it('keeps the average pace of the cycle after an idle stretch', () => {
+    // Flat at 24 % for two days, 96 h into the cycle: 0.25 % per hour on average, 72 h left -> 42 %.
+    const idle = [...Array(48).keys()].map((i) => weeklySample(now - (48 - i) * HOUR, 24));
+    expect(endPercent(computeForecasts(idle, weeklyUsage(24), now).weekly)).toBeCloseTo(42, 5);
   });
 
   it('projects the percent at the reset from the pace of the last two days', () => {
