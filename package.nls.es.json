@@ -14,7 +14,7 @@
   "config.windows.enum.both": "Muestra la sesión de 5 horas y la ventana de 7 días.",
   "config.windows.enum.session": "Muestra solo la sesión de 5 horas.",
   "config.windows.enum.weekly": "Muestra solo la ventana de 7 días.",
-  "config.extendedView.description": "Muestra las etiquetas completas (Sesión (5 h), Semanal (7 días), Se reinicia en) en la barra de estado.",
+  "config.extendedView.description": "Muestra las etiquetas completas (Sesión (5 h), Semanal (7 días), Se restablece en) en la barra de estado.",
   "config.indicator.description": "Cómo dibuja la barra de estado el uso junto al porcentaje.",
   "config.indicator.enum.ring": "Un anillo que se llena junto a cada porcentaje.",
   "config.indicator.enum.bar": "Una barra de progreso junto a cada porcentaje.",

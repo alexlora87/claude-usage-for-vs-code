@@ -14,7 +14,7 @@
   "config.windows.enum.both": "5시간 세션과 7일 기간을 표시합니다.",
   "config.windows.enum.session": "5시간 세션만 표시합니다.",
   "config.windows.enum.weekly": "7일 기간만 표시합니다.",
-  "config.extendedView.description": "상태 표시줄에 전체 레이블(세션 (5시간), 주간 (7일), 초기화까지)을 표시합니다.",
+  "config.extendedView.description": "상태 표시줄에 전체 레이블(세션 (5시간), 주간 (7일), 재설정까지)을 표시합니다.",
   "config.indicator.description": "상태 표시줄에서 백분율 옆에 사용량을 그리는 방식입니다.",
   "config.indicator.enum.ring": "각 백분율 옆에 채워지는 링을 표시합니다.",
   "config.indicator.enum.bar": "각 백분율 옆에 진행률 표시줄을 표시합니다.",

@@ -135,8 +135,8 @@ describe('crossings in Spanish', () => {
       spend: { ...spend, limitReached: true },
     };
     expect(crossings(usage, DEFAULT_THRESHOLDS, now).map((c) => c.message)).toEqual([
-      'Tu sesión de 5 horas está al 95%. Se reinicia en 0h 40m.',
-      'Tu ventana de 7 días está al 72%. Se reinicia en 2d 0h.',
+      'Tu sesión de 5 horas está al 95%. Se restablece en 0h 40m.',
+      'Tu límite semanal está al 72%. Se restablece en 2d 0h.',
       'Se alcanzó el límite de créditos mensuales ($600.00 de $800.00).',
     ]);
   });

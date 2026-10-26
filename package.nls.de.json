@@ -14,7 +14,7 @@
   "config.windows.enum.both": "Zeigt die 5-Stunden-Sitzung und den 7-Tage-Zeitraum an.",
   "config.windows.enum.session": "Zeigt nur die 5-Stunden-Sitzung an.",
   "config.windows.enum.weekly": "Zeigt nur den 7-Tage-Zeitraum an.",
-  "config.extendedView.description": "Zeigt in der Statusleiste vollständige Beschriftungen an (Sitzung (5 Std.), Woche (7 Tage), Reset in).",
+  "config.extendedView.description": "Zeigt in der Statusleiste vollständige Beschriftungen an (Sitzung (5 Std.), Wöchentlich (7 Tage), Reset in).",
   "config.indicator.description": "Wie die Statusleiste die Nutzung neben dem Prozentwert darstellt.",
   "config.indicator.enum.ring": "Ein Ring neben jedem Prozentwert, der sich füllt.",
   "config.indicator.enum.bar": "Ein Fortschrittsbalken neben jedem Prozentwert.",

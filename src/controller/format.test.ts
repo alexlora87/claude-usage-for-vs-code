@@ -337,7 +337,7 @@ describe('in Spanish', () => {
 
   it('renders the extended view, keeping the compact abbreviations', () => {
     expect(buildView({ stale: false, loading: false, usage }, options, () => '*', now).text).toBe(
-      '$(sparkle) Claude Usage · Sesión (5 h) * 32% · Se reinicia en 0h 7m | Semanal (7 días) * 4% · Se reinicia en 6d 21h',
+      '$(sparkle) Claude Usage · Sesión (5 h) * 32% · Se restablece en 0h 7m | Semanal (7 días) * 4% · Se restablece en 6d 21h',
     );
     expect(buildView({ stale: false, loading: false, usage }, { ...options, extended: false }, () => '*', now).text).toBe(
       '$(sparkle) Claude Usage · 5h * 32% · 0h 7m | 7d * 4% · 6d 21h',
@@ -352,9 +352,9 @@ describe('in Spanish', () => {
 
   it('writes the tooltip and the summary', () => {
     expect(formatTooltip({ session: usage.session, spend }, now)).toBe(
-      'Sesión (5 h)  \n• se reinicia hoy a las 12:07  \nCréditos mensuales  \n• $7.29 de $800.00 · límite alcanzado  \n• $792.71 restantes · 0.9% usado',
+      'Sesión (5 h)  \n• se restablece hoy a las 12:07  \nCréditos mensuales  \n• $7.29 de $800.00 · límite alcanzado  \n• $792.71 restantes · 0.9% usado',
     );
-    expect(formatSummary({ session: usage.session }, options, now)).toBe('Sesión (5 h) 32% · se reinicia en 0h 7m');
+    expect(formatSummary({ session: usage.session }, options, now)).toBe('Sesión (5 h) 32% · se restablece en 0h 7m');
   });
 
   it('explains errors', () => {
