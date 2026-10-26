@@ -1,9 +1,12 @@
-import { existsSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_THRESHOLDS } from './format';
+import { setLanguage } from '../shared/l10n';
 import { claim, claimCrossing, claimUnlessMuted, crossings, markerName, pruneMarkers } from './notifier';
+
+const SPANISH = JSON.parse(readFileSync('l10n/bundle.l10n.es.json', 'utf8'));
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
@@ -118,5 +121,23 @@ describe('markers', () => {
     expect(existsSync(join(dir, 'notified-old'))).toBe(false);
     expect(existsSync(join(dir, 'notified-new'))).toBe(true);
     expect(existsSync(join(dir, 'cache-abc.json'))).toBe(true);
+  });
+});
+
+describe('crossings in Spanish', () => {
+  beforeEach(() => setLanguage('es', SPANISH));
+  afterEach(() => setLanguage('en', undefined));
+
+  it('writes the messages in Spanish', () => {
+    const usage = {
+      session: { percent: 95.4, resetsAt: new Date(now + 40 * MIN) },
+      weekly: { percent: 72, resetsAt: new Date(now + 2 * DAY) },
+      spend: { ...spend, limitReached: true },
+    };
+    expect(crossings(usage, DEFAULT_THRESHOLDS, now).map((c) => c.message)).toEqual([
+      'Tu sesión de 5 horas está al 95%. Se restablece en 0h 40m.',
+      'Tu límite semanal está al 72%. Se restablece en 2d 0h.',
+      'Se alcanzó el límite de créditos mensuales ($600.00 de $800.00).',
+    ]);
   });
 });

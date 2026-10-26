@@ -1,8 +1,8 @@
 {
   "name": "claude-usage-vscode",
   "displayName": "Claude Usage for VS Code",
-  "description": "Shows your Claude Code usage (5-hour session and 7-day window) in the status bar, and the monthly spend on accounts billed by money.",
-  "version": "1.5.1",
+  "description": "%description%",
+  "version": "1.6.0",
   "publisher": "alexlora87",
   "icon": "resources/icon.png",
   "license": "MIT",
@@ -16,6 +16,7 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
+  "l10n": "./l10n",
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/vscode": "1.90.0",
@@ -30,39 +31,39 @@
     "commands": [
       {
         "command": "claudeUsage.refresh",
-        "title": "Claude Usage: Refresh"
+        "title": "%command.refresh.title%"
       },
       {
         "command": "claudeUsage.showHistory",
-        "title": "Claude Usage: Show History"
+        "title": "%command.showHistory.title%"
       },
       {
         "command": "claudeUsage.showMenu",
-        "title": "Claude Usage: Show Menu"
+        "title": "%command.showMenu.title%"
       },
       {
         "command": "claudeUsage.toggleExtendedView",
-        "title": "Claude Usage: Toggle Extended View"
+        "title": "%command.toggleExtendedView.title%"
       },
       {
         "command": "claudeUsage.muteNotifications",
-        "title": "Claude Usage: Mute Notifications…"
+        "title": "%command.muteNotifications.title%"
       },
       {
         "command": "claudeUsage.unmuteNotifications",
-        "title": "Claude Usage: Unmute Notifications"
+        "title": "%command.unmuteNotifications.title%"
       },
       {
         "command": "claudeUsage.exportHistory",
-        "title": "Claude Usage: Export History…"
+        "title": "%command.exportHistory.title%"
       },
       {
         "command": "claudeUsage.copySummary",
-        "title": "Claude Usage: Copy Usage Summary"
+        "title": "%command.copySummary.title%"
       },
       {
         "command": "claudeUsage.openSettings",
-        "title": "Claude Usage: Open Settings"
+        "title": "%command.openSettings.title%"
       }
     ],
     "keybindings": [
@@ -81,7 +82,7 @@
           "default": 120,
           "minimum": 30,
           "maximum": 3600,
-          "description": "Seconds between usage requests."
+          "description": "%config.refreshInterval.description%"
         },
         "claudeUsage.windows": {
           "order": 2,
@@ -92,18 +93,18 @@
             "weekly"
           ],
           "enumDescriptions": [
-            "Show the 5-hour session and the 7-day window.",
-            "Show only the 5-hour session.",
-            "Show only the 7-day window."
+            "%config.windows.enum.both%",
+            "%config.windows.enum.session%",
+            "%config.windows.enum.weekly%"
           ],
           "default": "both",
-          "description": "Which usage windows the status bar, the notifications and the history show."
+          "description": "%config.windows.description%"
         },
         "claudeUsage.extendedView": {
           "order": 3,
           "type": "boolean",
           "default": false,
-          "description": "Show full labels (Session (5hr), Weekly (7 day), Resets in) in the status bar."
+          "description": "%config.extendedView.description%"
         },
         "claudeUsage.indicator": {
           "order": 4,
@@ -113,11 +114,11 @@
             "bar"
           ],
           "enumDescriptions": [
-            "A ring that fills up next to each percentage.",
-            "A progress bar next to each percentage."
+            "%config.indicator.enum.ring%",
+            "%config.indicator.enum.bar%"
           ],
           "default": "ring",
-          "description": "How the status bar draws the usage next to the percentage."
+          "description": "%config.indicator.description%"
         },
         "claudeUsage.barSize": {
           "order": 5,
@@ -128,12 +129,12 @@
             "large"
           ],
           "enumDescriptions": [
-            "A short bar.",
-            "A longer bar.",
-            "The longest bar."
+            "%config.barSize.enum.small%",
+            "%config.barSize.enum.medium%",
+            "%config.barSize.enum.large%"
           ],
           "default": "medium",
-          "description": "Length of the progress bar. Only used when the indicator is bar."
+          "description": "%config.barSize.description%"
         },
         "claudeUsage.showSpend": {
           "order": 6,
@@ -143,23 +144,23 @@
             "never"
           ],
           "enumDescriptions": [
-            "Show the monthly spend when the account has extra usage enabled with a limit.",
-            "Never show the monthly spend."
+            "%config.showSpend.enum.auto%",
+            "%config.showSpend.enum.never%"
           ],
           "default": "auto",
-          "description": "Monthly spend, for accounts billed by money instead of by usage window."
+          "description": "%config.showSpend.description%"
         },
         "claudeUsage.notifications": {
           "order": 7,
           "type": "boolean",
           "default": true,
-          "description": "Show a notification once per window cycle when usage reaches the warning or the critical threshold."
+          "description": "%config.notifications.description%"
         },
         "claudeUsage.criticalModal": {
           "order": 8,
           "type": "boolean",
           "default": false,
-          "description": "Show the critical notification as a modal dialog in the middle of the window, which blocks VS Code until it is closed. Needs notifications to be on."
+          "description": "%config.criticalModal.description%"
         },
         "claudeUsage.warningThreshold": {
           "order": 9,
@@ -167,7 +168,7 @@
           "default": 70,
           "minimum": 1,
           "maximum": 99,
-          "description": "Percentage from which the status bar turns yellow. Must be lower than the critical threshold."
+          "description": "%config.warningThreshold.description%"
         },
         "claudeUsage.criticalThreshold": {
           "order": 10,
@@ -175,7 +176,7 @@
           "default": 90,
           "minimum": 2,
           "maximum": 100,
-          "description": "Percentage from which the status bar turns red."
+          "description": "%config.criticalThreshold.description%"
         },
         "claudeUsage.historyChartSize": {
           "order": 11,
@@ -186,12 +187,12 @@
             "large"
           ],
           "enumDescriptions": [
-            "Short panels, with a line on the percent axis every 25 points.",
-            "Taller panels, with a line every 20 points.",
-            "The tallest panels, with a line every 10 points."
+            "%config.historyChartSize.enum.small%",
+            "%config.historyChartSize.enum.medium%",
+            "%config.historyChartSize.enum.large%"
           ],
           "default": "medium",
-          "description": "Size of the panels of Claude Usage: Show History."
+          "description": "%config.historyChartSize.description%"
         }
       }
     },
@@ -951,5 +952,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/alexlora87/claude-usage-for-vs-code.git"
+  },
+  "dependencies": {
+    "@vscode/l10n": "^0.0.18"
   }
 }

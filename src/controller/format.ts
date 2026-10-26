@@ -1,5 +1,7 @@
+import { t } from '@vscode/l10n';
 import type { ViewState } from '../engine/scheduler';
 import type { Forecasts, WindowForecast } from './forecast';
+import { dateLocale } from '../shared/l10n';
 import { Spend, Usage, UsageErrorKind, UsageWindow } from '../shared/types';
 
 export type Level = 'ok' | 'warning' | 'critical';
@@ -46,9 +48,10 @@ export function formatMoney(amount: number, currency: string): string {
 }
 
 export function formatSpend(spend: Spend, extended: boolean, icon: string): string {
-  const amounts = `${formatMoney(spend.used, spend.currency)} ${extended ? 'of' : '/'} ${formatMoney(spend.limit, spend.currency)}`;
-  const text = `${extended ? 'Monthly Credits' : 'Credits'} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
-  return spend.limitReached ? `${text} · limit reached` : text;
+  const [used, limit] = [formatMoney(spend.used, spend.currency), formatMoney(spend.limit, spend.currency)];
+  const amounts = extended ? t('{0} of {1}', used, limit) : `${used} / ${limit}`;
+  const text = `${extended ? t('Monthly Credits') : t('Credits')} ${amounts} ${icon} ${Math.round(spend.percent)}%`;
+  return spend.limitReached ? `${text} · ${t('limit reached')}` : text;
 }
 
 /** Time left as `0h 7m`; for the long window `6d 21h`, and just minutes under an hour. */
@@ -87,16 +90,16 @@ const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(),
 
 /** Exact local reset time in 24-hour format, e.g. `today at 18:45` or `Fri, Oct 23 at 22:10`. */
 export function formatResetTime(date: Date, now: number): string {
-  const time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const time = date.toLocaleTimeString(dateLocale('en-GB'), { hour: '2-digit', minute: '2-digit', hour12: false });
   const days = Math.round((startOfDay(date) - startOfDay(new Date(now))) / DAY);
   if (days <= 0) {
-    return `today at ${time}`;
+    return t('today at {0}', time);
   }
   if (days === 1 && date.getTime() - now < DAY) {
-    return `tomorrow at ${time}`;
+    return t('tomorrow at {0}', time);
   }
-  const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  return `${day} at ${time}`;
+  const day = date.toLocaleDateString(dateLocale('en-US'), { weekday: 'short', month: 'short', day: 'numeric' });
+  return t('{0} at {1}', day, time);
 }
 
 /** Below this time left, where a window ends up is no longer news. */
@@ -108,48 +111,52 @@ function pace(forecast: WindowForecast | undefined, resetsAt: Date, now: number)
     return undefined;
   }
   if ('fullAt' in forecast) {
-    return forecast.fullAt > now ? `at this pace, 100% in ~${formatRemaining(forecast.fullAt - now, true)}` : undefined;
+    return forecast.fullAt > now ? t('at this pace, 100% in ~{0}', formatRemaining(forecast.fullAt - now, true)) : undefined;
   }
   // Never 100%: that would be the "fills up" line.
-  return resetsAt.getTime() - now >= MIN_LEFT_MS ? `on pace to end at ~${Math.min(99, Math.round(forecast.endPercent))}%` : undefined;
+  return resetsAt.getTime() - now >= MIN_LEFT_MS ? t('on pace to end at ~{0}%', Math.min(99, Math.round(forecast.endPercent))) : undefined;
 }
 
 /** The lines of a window: its label over a bullet per detail. */
 function windowLines(label: string, resetsAt: Date, forecast: WindowForecast | undefined, now: number): string[] {
   const paceText = pace(forecast, resetsAt, now);
-  return [label, `• resets ${formatResetTime(resetsAt, now)}`, ...(paceText ? [`• ${paceText}`] : [])];
+  return [label, `• ${t('resets {0}', formatResetTime(resetsAt, now))}`, ...(paceText ? [`• ${paceText}`] : [])];
 }
 
 /** Markdown for the hover: one line per window, joined with a hard line break. */
 export function formatTooltip(usage: Usage, now: number, forecasts: Forecasts = {}): string | undefined {
   const lines: string[] = [];
   if (usage.session?.resetsAt) {
-    lines.push(...windowLines('Session (5hr)', usage.session.resetsAt, forecasts.session, now));
+    lines.push(...windowLines(t('Session (5hr)'), usage.session.resetsAt, forecasts.session, now));
   }
   if (usage.weekly?.resetsAt) {
-    lines.push(...windowLines('Weekly (7 day)', usage.weekly.resetsAt, forecasts.weekly, now));
+    lines.push(...windowLines(t('Weekly (7 day)'), usage.weekly.resetsAt, forecasts.weekly, now));
   }
   if (usage.spend) {
     const { used, limit, currency, percent, limitReached } = usage.spend;
     const remaining = formatMoney(Math.max(0, limit - used), currency);
-    lines.push('Monthly Credits');
-    lines.push(`• ${formatMoney(used, currency)} of ${formatMoney(limit, currency)}${limitReached ? ' · limit reached' : ''}`);
-    lines.push(`• ${remaining} remaining · ${percent.toFixed(1)}% used`);
+    lines.push(t('Monthly Credits'));
+    lines.push(`• ${t('{0} of {1}', formatMoney(used, currency), formatMoney(limit, currency))}${limitReached ? ` · ${t('limit reached')}` : ''}`);
+    lines.push(`• ${t('{0} remaining · {1}% used', remaining, percent.toFixed(1))}`);
     if (forecasts.spend !== undefined && forecasts.spend > now && !limitReached) {
-      lines.push(`• at this pace, the limit is reached in ~${formatRemaining(forecasts.spend - now, true)}`);
+      lines.push(`• ${t('at this pace, the limit is reached in ~{0}', formatRemaining(forecasts.spend - now, true))}`);
     }
   }
   return lines.length ? lines.join('  \n') : undefined;
 }
 
-const ERROR_TEXT: Record<UsageErrorKind, string> = {
-  'no-credentials': 'Sign in to Claude Code',
-  'token-expired': 'Open Claude Code',
-  unauthorized: 'Sign in again',
-  'rate-limited': 'Rate limited',
-  offline: 'Offline',
-  unknown: 'Error',
-};
+/** A function, not a constant: the texts follow the display language set at activation. */
+function errorText(kind: UsageErrorKind): string {
+  const texts: Record<UsageErrorKind, string> = {
+    'no-credentials': t('Sign in to Claude Code'),
+    'token-expired': t('Open Claude Code'),
+    unauthorized: t('Sign in again'),
+    'rate-limited': t('Rate limited'),
+    offline: t('Offline'),
+    unknown: t('Error'),
+  };
+  return texts[kind];
+}
 
 export interface StatusView {
   text: string;
@@ -186,13 +193,13 @@ export function formatSummary(usage: Usage, options: Pick<ViewOptions, 'windows'
   // A window whose reset has passed is an old reading: its percent says nothing about now.
   const current = (w: UsageWindow | undefined) => (w && !(w.resetsAt && w.resetsAt.getTime() <= now) ? w : undefined);
   const window = (label: string, w: UsageWindow, longWindow: boolean) =>
-    `${label} ${Math.round(w.percent)}%${w.resetsAt ? ` · resets in ${formatRemaining(w.resetsAt.getTime() - now, longWindow)}` : ''}`;
+    `${label} ${Math.round(w.percent)}%${w.resetsAt ? ` · ${t('resets in {0}', formatRemaining(w.resetsAt.getTime() - now, longWindow))}` : ''}`;
   const [currentSession, currentWeekly] = [current(session), current(weekly)];
   const parts = [
-    currentSession ? window('Session (5hr)', currentSession, false) : undefined,
-    currentWeekly ? window('Weekly (7 day)', currentWeekly, true) : undefined,
+    currentSession ? window(t('Session (5hr)'), currentSession, false) : undefined,
+    currentWeekly ? window(t('Weekly (7 day)'), currentWeekly, true) : undefined,
     spend
-      ? `Monthly Credits ${formatMoney(spend.used, spend.currency)} of ${formatMoney(spend.limit, spend.currency)} (${Math.round(spend.percent)}%)${spend.limitReached ? ' · limit reached' : ''}`
+      ? `${t('Monthly Credits')} ${t('{0} of {1}', formatMoney(spend.used, spend.currency), formatMoney(spend.limit, spend.currency))} (${Math.round(spend.percent)}%)${spend.limitReached ? ` · ${t('limit reached')}` : ''}`
       : undefined,
   ].filter((part): part is string => part !== undefined);
   return parts.length ? parts.join(' | ') : undefined;
@@ -203,27 +210,28 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
   const { extended } = options;
   if (!state.usage) {
     if (state.error) {
-      return { text: `${PREFIX}: ${ERROR_TEXT[state.error.kind]}`, tooltip: errorTooltip(state, now), level: 'ok' };
+      return { text: `${PREFIX}: ${errorText(state.error.kind)}`, tooltip: errorTooltip(state, now), level: 'ok' };
     }
-    return { text: `${PREFIX}: loading…`, level: 'ok' };
+    return { text: `${PREFIX}: ${t('loading…')}`, level: 'ok' };
   }
 
   const usage = visibleUsage(state.usage, options);
   const { session, weekly, spend } = usage;
   const parts: string[] = [];
+  const resetsPrefix = extended ? `${t('Resets in')} ` : '';
   if (session) {
     parts.push(formatWindow(session, {
-      label: extended ? 'Session (5hr)' : '5h',
+      label: extended ? t('Session (5hr)') : '5h',
       icon: icon(session.percent),
-      resetsPrefix: extended ? 'Resets in ' : '',
+      resetsPrefix,
       longWindow: false,
     }, now));
   }
   if (weekly) {
     parts.push(formatWindow(weekly, {
-      label: extended ? 'Weekly (7 day)' : '7d',
+      label: extended ? t('Weekly (7 day)') : '7d',
       icon: icon(weekly.percent),
-      resetsPrefix: extended ? 'Resets in ' : '',
+      resetsPrefix,
       longWindow: true,
     }, now));
   }
@@ -232,8 +240,8 @@ export function buildView(state: ViewState, options: ViewOptions, icon: (percent
     parts.push(formatSpend(spend, extended, icon(spend.percent)));
   }
 
-  const body = parts.length ? parts.join(' | ') : state.usage.spend ? 'spend hidden' : 'no data';
-  const muted = options.mutedUntil !== undefined && options.mutedUntil > now ? `Notifications muted until ${formatResetTime(new Date(options.mutedUntil), now)}` : undefined;
+  const body = parts.length ? parts.join(' | ') : state.usage.spend ? t('spend hidden') : t('no data');
+  const muted = options.mutedUntil !== undefined && options.mutedUntil > now ? t('Notifications muted until {0}', formatResetTime(new Date(options.mutedUntil), now)) : undefined;
   const tooltip = [formatTooltip(usage, now, options.forecasts), muted, state.stale ? errorTooltip(state, now) : undefined]
     .filter(Boolean)
     .join('\n\n') || undefined;
@@ -247,7 +255,7 @@ function errorTooltip(state: ViewState, now: number): string | undefined {
   let text = state.error.message;
   if (state.retryAt) {
     const seconds = Math.max(1, Math.ceil((state.retryAt - now) / 1000));
-    text += `  \nRetrying in ${seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`}`;
+    text += `  \n${t('Retrying in {0}', seconds >= 60 ? `${Math.ceil(seconds / 60)}m` : `${seconds}s`)}`;
   }
   return text;
 }

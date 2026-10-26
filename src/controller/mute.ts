@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { t } from '@vscode/l10n';
 import { Usage } from '../shared/types';
 import { formatResetTime, ViewOptions, visibleUsage } from './format';
 
@@ -56,11 +57,11 @@ export interface MuteChoice {
 
 /** How long to mute: an hour, or until a visible window resets. */
 export function muteChoices(usage: Usage | undefined, options: Pick<ViewOptions, 'windows' | 'showSpend'>, now: number): MuteChoice[] {
-  const choices: MuteChoice[] = [{ label: 'Mute for 1 hour', until: now + HOUR }];
+  const choices: MuteChoice[] = [{ label: t('Mute for 1 hour'), until: now + HOUR }];
   const { session, weekly } = usage ? visibleUsage(usage, options) : { session: undefined, weekly: undefined };
-  for (const [name, window] of [['session', session], ['weekly window', weekly]] as const) {
+  for (const [label, window] of [[t('Mute until the session resets'), session], [t('Mute until the weekly window resets'), weekly]] as const) {
     if (window?.resetsAt && window.resetsAt.getTime() > now) {
-      choices.push({ label: `Mute until the ${name} resets`, description: formatResetTime(window.resetsAt, now), until: window.resetsAt.getTime() });
+      choices.push({ label, description: formatResetTime(window.resetsAt, now), until: window.resetsAt.getTime() });
     }
   }
   return choices;

@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import * as vscode from 'vscode';
+import { t } from '@vscode/l10n';
 import { Sample } from '../engine/history';
 import { renderHistoryHtml, SeriesKey } from './history_html';
 import { readChartSize, readOptions } from './settings';
@@ -16,7 +17,7 @@ export class HistoryView implements vscode.Disposable {
       this.render();
       return;
     }
-    this.panel = vscode.window.createWebviewPanel('claudeUsage.history', 'Claude Usage History', vscode.ViewColumn.Active, {
+    this.panel = vscode.window.createWebviewPanel('claudeUsage.history', t('Claude Usage History'), vscode.ViewColumn.Active, {
       enableScripts: false,
       localResourceRoots: [],
     });

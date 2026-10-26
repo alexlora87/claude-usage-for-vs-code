@@ -1,6 +1,7 @@
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import * as vscode from 'vscode';
+import { t } from '@vscode/l10n';
 import { computeForecasts, Forecasts } from './controller/forecast';
 import { formatSummary, visibleUsage } from './controller/format';
 import { claimUnlessMuted, crossings, pruneMarkers } from './controller/notifier';
@@ -15,6 +16,7 @@ import { UsageScheduler } from './engine/scheduler';
 import { History, historyFile } from './engine/history';
 import { accountId, cacheFile, SharedCache } from './engine/shared_cache';
 import { fetchUsage } from './engine/usage_api';
+import { dateLocale, setLanguage } from './shared/l10n';
 import { Usage } from './shared/types';
 import type { ViewState } from './engine/scheduler';
 
@@ -49,8 +51,8 @@ function notify(storageDir: string, account: string, usage: Usage, now: number):
 }
 
 async function showCriticalModal(text: string): Promise<void> {
-  const mute: vscode.MessageItem = { title: 'Mute notifications' };
-  const close: vscode.MessageItem = { title: 'Close', isCloseAffordance: true };
+  const mute: vscode.MessageItem = { title: t('Mute notifications') };
+  const close: vscode.MessageItem = { title: t('Close'), isCloseAffordance: true };
   const pick = await vscode.window.showErrorMessage(text, { modal: true }, mute, close);
   if (pick === mute) {
     void vscode.commands.executeCommand('claudeUsage.muteNotifications');
@@ -60,12 +62,12 @@ async function showCriticalModal(text: string): Promise<void> {
 async function copySummary(state: ViewState): Promise<void> {
   const summary = state.usage && formatSummary(state.usage, readOptions(), Date.now());
   if (!summary) {
-    void vscode.window.showInformationMessage('Claude Usage: no current usage to copy.');
+    void vscode.window.showInformationMessage(`Claude Usage: ${t('no current usage to copy.')}`);
     return;
   }
-  const asOf = state.stale && state.fetchedAt !== undefined ? ` (as of ${new Date(state.fetchedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })})` : '';
+  const asOf = state.stale && state.fetchedAt !== undefined ? ` ${t('(as of {0})', new Date(state.fetchedAt).toLocaleString(dateLocale('en-GB'), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }))}` : '';
   await vscode.env.clipboard.writeText(summary + asOf);
-  vscode.window.setStatusBarMessage('Claude Usage: summary copied', 3000);
+  vscode.window.setStatusBarMessage(`Claude Usage: ${t('summary copied')}`, 3000);
 }
 
 /** Saves the readings as CSV or JSON, whichever the chosen file name ends with. */
@@ -73,7 +75,7 @@ async function exportHistory(history: History): Promise<void> {
   const options = readOptions();
   const samples = forExport(history.read(), options.showSpend);
   if (!samples.length) {
-    void vscode.window.showInformationMessage('Claude Usage: no history to export yet.');
+    void vscode.window.showInformationMessage(`Claude Usage: ${t('no history to export yet.')}`);
     return;
   }
   const now = Date.now();
@@ -82,7 +84,7 @@ async function exportHistory(history: History): Promise<void> {
   const uri = await vscode.window.showSaveDialog({
     defaultUri: vscode.Uri.file(join(homedir(), name)),
     filters: { CSV: ['csv'], JSON: ['json'] },
-    title: 'Export Claude Usage history',
+    title: t('Export Claude Usage history'),
   });
   if (!uri) {
     return;
@@ -91,13 +93,16 @@ async function exportHistory(history: History): Promise<void> {
   try {
     await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
   } catch {
-    void vscode.window.showErrorMessage(`Claude Usage: could not export the history to ${basename(uri.path)}.`);
+    void vscode.window.showErrorMessage(`Claude Usage: ${t('could not export the history to {0}.', basename(uri.path))}`);
     return;
   }
-  void vscode.window.showInformationMessage(`Claude Usage: exported ${samples.length} reading${samples.length === 1 ? '' : 's'} to ${basename(uri.path)}.`);
+  const exported = samples.length === 1 ? t('exported 1 reading to {0}.', basename(uri.path)) : t('exported {0} readings to {1}.', samples.length, basename(uri.path));
+  void vscode.window.showInformationMessage(`Claude Usage: ${exported}`);
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+  // VS Code reloads the window when the display language changes, so reading it once is enough.
+  setLanguage(vscode.env.language, vscode.l10n.bundle);
   const storageDir = context.globalStorageUri.fsPath;
   const account = accountId(configDir());
   pruneMarkers(storageDir, Date.now());
@@ -159,18 +164,18 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('claudeUsage.showMenu', () => showMenu(mutedUntil)),
     vscode.commands.registerCommand('claudeUsage.muteNotifications', async () => {
       if (!notificationsEnabled()) {
-        void vscode.window.showInformationMessage('Claude Usage: notifications are turned off in the settings.');
+        void vscode.window.showInformationMessage(`Claude Usage: ${t('notifications are turned off in the settings.')}`);
         return;
       }
-      const pick = await vscode.window.showQuickPick(muteChoices(lastState.usage, readOptions(), Date.now()), { title: 'Mute notifications' });
+      const pick = await vscode.window.showQuickPick(muteChoices(lastState.usage, readOptions(), Date.now()), { title: t('Mute notifications') });
       if (pick && !writeMute(mutePath, pick.until)) {
-        void vscode.window.showErrorMessage('Claude Usage: could not save the mute.');
+        void vscode.window.showErrorMessage(`Claude Usage: ${t('could not save the mute.')}`);
       }
       statusBar.render();
     }),
     vscode.commands.registerCommand('claudeUsage.unmuteNotifications', () => {
       if (mutedUntil() === undefined) {
-        void vscode.window.showInformationMessage('Claude Usage: notifications are not muted.');
+        void vscode.window.showInformationMessage(`Claude Usage: ${t('notifications are not muted.')}`);
         return;
       }
       clearMute(mutePath);

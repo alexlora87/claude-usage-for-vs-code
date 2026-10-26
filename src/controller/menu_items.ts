@@ -1,3 +1,4 @@
+import { t } from '@vscode/l10n';
 import { formatResetTime } from './format';
 
 export interface MenuItem {
@@ -18,15 +19,15 @@ export function menuItems({ extended, notifications, mutedUntil, now }: MenuStat
   const mute: MenuItem[] = !notifications
     ? []
     : mutedUntil !== undefined
-      ? [{ label: `$(bell) Unmute notifications · muted until ${formatResetTime(new Date(mutedUntil), now)}`, command: 'claudeUsage.unmuteNotifications' }]
-      : [{ label: '$(bell-slash) Mute notifications…', command: 'claudeUsage.muteNotifications' }];
+      ? [{ label: `$(bell) ${t('Unmute notifications · muted until {0}', formatResetTime(new Date(mutedUntil), now))}`, command: 'claudeUsage.unmuteNotifications' }]
+      : [{ label: `$(bell-slash) ${t('Mute notifications…')}`, command: 'claudeUsage.muteNotifications' }];
   return [
-    { label: '$(refresh) Refresh now', command: 'claudeUsage.refresh' },
-    { label: extended ? '$(screen-normal) Switch to compact view' : '$(screen-full) Switch to extended view', command: 'claudeUsage.toggleExtendedView' },
-    { label: '$(graph) Show usage history', command: 'claudeUsage.showHistory' },
-    { label: '$(copy) Copy usage summary', command: 'claudeUsage.copySummary' },
+    { label: `$(refresh) ${t('Refresh now')}`, command: 'claudeUsage.refresh' },
+    { label: extended ? `$(screen-normal) ${t('Switch to compact view')}` : `$(screen-full) ${t('Switch to extended view')}`, command: 'claudeUsage.toggleExtendedView' },
+    { label: `$(graph) ${t('Show usage history')}`, command: 'claudeUsage.showHistory' },
+    { label: `$(copy) ${t('Copy usage summary')}`, command: 'claudeUsage.copySummary' },
     ...mute,
-    { label: '$(gear) Open settings', command: 'claudeUsage.openSettings' },
+    { label: `$(gear) ${t('Open settings')}`, command: 'claudeUsage.openSettings' },
   ];
 }
 

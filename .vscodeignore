@@ -3,6 +3,8 @@
 !resources/*.woff
 !resources/icon.png
 !package.json
+!package.nls*.json
+!l10n/*.json
 !README.md
 !CHANGELOG.md
 !LICENSE

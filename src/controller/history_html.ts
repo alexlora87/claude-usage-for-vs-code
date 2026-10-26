@@ -1,19 +1,22 @@
+import { t } from '@vscode/l10n';
 import { Sample } from '../engine/history';
-import { ChartSize, renderPanels, SeriesKey } from './history_charts';
+import { language } from '../shared/l10n';
+import { ChartSize, escapeHtml, renderPanels, SeriesKey } from './history_charts';
 
 export type { SeriesKey } from './history_charts';
 
 export function renderHistoryHtml(samples: Sample[], now: number, nonce: string, allowed: SeriesKey[] = ['session', 'weekly', 'spend'], size: ChartSize = 'medium'): string {
   const panels = renderPanels(samples, now, allowed, size);
-  const body = panels || '<p>No history yet. It fills up as the extension reads your usage.</p>';
+  const body = panels || `<p>${escapeHtml(t('No history yet. It fills up as the extension reads your usage.'))}</p>`;
+  const title = escapeHtml(t('Claude Usage History'));
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${language()}">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude Usage History</title>
+<title>${title}</title>
 <style nonce="${nonce}">
 body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 16px; }
 h1 { font-size: 1.3em; font-weight: 600; margin: 0 0 4px; }
@@ -60,8 +63,8 @@ circle:hover { fill: currentColor; }
 </style>
 </head>
 <body>
-<h1>Claude Usage History</h1>
-<p class="sub">Stored only on this computer.</p>
+<h1>${title}</h1>
+<p class="sub">${escapeHtml(t('Stored only on this computer.'))}</p>
 ${body}
 </body>
 </html>`;

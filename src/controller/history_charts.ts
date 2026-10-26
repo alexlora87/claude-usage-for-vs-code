@@ -1,4 +1,6 @@
+import { t } from '@vscode/l10n';
 import { Sample } from '../engine/history';
+import { dateLocale } from '../shared/l10n';
 import { computeForecasts } from './forecast';
 
 const MINUTE = 60_000;
@@ -49,7 +51,7 @@ export function escapeHtml(text: string): string {
 }
 
 const formatTime = (t: number) =>
-  new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  new Date(t).toLocaleString(dateLocale('en-GB'), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
 
 interface Reading {
   t: number;
@@ -148,7 +150,7 @@ function axes(s: Scale, start: number, end: number): string {
   const days: string[] = [];
   for (; midnight.getTime() <= end; midnight.setDate(midnight.getDate() + 1)) {
     const t = midnight.getTime();
-    const label = midnight.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+    const label = midnight.toLocaleDateString(dateLocale('en-GB'), { weekday: 'short', day: 'numeric' });
     days.push(`<line class="grid" x1="${f(s.x(t))}" x2="${f(s.x(t))}" y1="${PLOT.top}" y2="${height - PLOT.bottom}"/><text class="axis" x="${f(Math.min(s.x(t), WIDTH - HALF_DAY_LABEL))}" y="${height - 8}" text-anchor="middle">${escapeHtml(label)}</text>`);
   }
   return grid + days.join('');
@@ -228,20 +230,20 @@ function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
       drawn += segment('connector', [s.x(previous.t), s.y(previous.percent)], [s.x(run[0].t), s.y(run[0].percent)]);
     }
     drawn += runShape('weekly', run, s);
-    drawn += hoverDots('weekly', run, s, 'Weekly (7 day)');
+    drawn += hoverDots('weekly', run, s, t('Weekly (7 day)'));
   });
 
   let projection = '';
   // Once the cycle is over there is no pace to project: it is the last one that was read.
   const ended = cycle.end <= now;
-  let note = `${ended ? 'Last cycle, reset' : 'Current cycle, resets'} ${formatTime(cycle.end)}`;
+  let note = ended ? t('Last cycle, reset {0}', formatTime(cycle.end)) : t('Current cycle, resets {0}', formatTime(cycle.end));
   const forecast = !ended ? computeForecasts(samples, { weekly: { percent: last.percent, resetsAt: new Date(cycle.end) } }, last.t).weekly : undefined;
   if (forecast && 'endPercent' in forecast) {
     projection = segment('projection', [s.x(last.t), s.y(last.percent)], [s.x(cycle.end), s.y(forecast.endPercent)]);
-    note += ` · on pace to end at ~${Math.min(99, Math.round(forecast.endPercent))}%`;
+    note += ` · ${t('on pace to end at ~{0}%', Math.min(99, Math.round(forecast.endPercent)))}`;
   } else if (forecast) {
     projection = segment('projection full', [s.x(last.t), s.y(last.percent)], [s.x(forecast.fullAt), s.y(100)]);
-    note += ' · at this pace it fills up before the reset';
+    note += ` · ${t('at this pace it fills up before the reset')}`;
   }
 
   const nowLine = now > cycle.start && now < cycle.end ? `<line class="now" x1="${f(s.x(now))}" x2="${f(s.x(now))}" y1="${PLOT.top}" y2="${layout.height - PLOT.bottom}"/>` : '';
@@ -249,15 +251,16 @@ function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
   const past = pastCycles(weeks, cycle);
   let before = '';
   past.forEach((c, i) => {
-    const label = `Cycle that reset ${formatTime(c.end)}`;
+    const label = t('Cycle that reset {0}', formatTime(c.end));
     before += c.runs.map((run) => runShape(`past age-${i + 1}`, run, s) + hoverDots('past', run, s, label)).join('');
   });
   if (past.length) {
-    note += ` · ${past.length} previous cycle${past.length === 1 ? '' : 's'}, peak${past.length === 1 ? '' : 's'} ${past.map((c) => `${Math.round(c.peak)}%`).join(', ')}`;
+    const peaks = past.map((c) => `${Math.round(c.peak)}%`).join(', ');
+    note += ` · ${past.length === 1 ? t('1 previous cycle, peak {0}', peaks) : t('{0} previous cycles, peaks {1}', past.length, peaks)}`;
   }
-  const legend = `<span class="swatch weekly-bg"></span>Usage <span class="swatch pace-bg"></span>Even pace <span class="swatch projection-bg"></span>Projection${past.length ? ' <span class="swatch past-bg"></span>Previous cycles' : ''}`;
-  const desc = `Line chart of the weekly cycle against an even pace. ${note}. Latest reading ${Math.round(last.percent)}%.`;
-  return panel('weekly', 'Weekly (7 day)', note, desc, axes(s, cycle.start, cycle.end) + before + pace + nowLine + drawn + projection, legend, layout.height);
+  const legend = `<span class="swatch weekly-bg"></span>${escapeHtml(t('Usage'))} <span class="swatch pace-bg"></span>${escapeHtml(t('Even pace'))} <span class="swatch projection-bg"></span>${escapeHtml(t('Projection'))}${past.length ? ` <span class="swatch past-bg"></span>${escapeHtml(t('Previous cycles'))}` : ''}`;
+  const desc = t('Line chart of the weekly cycle against an even pace. {0}. Latest reading {1}%.', note, Math.round(last.percent));
+  return panel('weekly', t('Weekly (7 day)'), note, desc, axes(s, cycle.start, cycle.end) + before + pace + nowLine + drawn + projection, legend, layout.height);
 }
 
 /** One bar per session of the last 7 days: the most it reached. */
@@ -276,21 +279,21 @@ function sessionPanel(samples: Sample[], now: number, layout: Layout): string {
       const x1 = s.x(c.end) - 1;
       // At least 2 px, so a session that stayed at 0 % is still a bar with its tooltip.
       const height = Math.max(s.y(0) - s.y(c.peak), 2);
-      const text = c.end > now ? `Session in progress · ${Math.round(c.peak)}% so far` : `Session that ended ${formatTime(c.end)} · peak ${Math.round(c.peak)}%`;
+      const text = c.end > now ? t('Session in progress · {0}% so far', Math.round(c.peak)) : t('Session that ended {0} · peak {1}%', formatTime(c.end), Math.round(c.peak));
       const geometry = `x="${f(x0)}" y="${f(s.y(0) - height)}" width="${f(Math.max(x1 - x0, 2))}" height="${f(height)}" rx="2"`;
       const hatch = c.peak >= HOT_AT ? `<rect class="bar-hatch" ${geometry} fill="url(#hot-hatch)"/>` : '';
       return `<rect class="bar${c.peak >= HOT_AT ? ' hot' : ''}" ${geometry}><title>${escapeHtml(text)}</title></rect>${hatch}`;
     })
     .join('');
   const full = sessions.filter((c) => c.peak >= HOT_AT).length;
-  const legend = `<span class="swatch session-bg"></span>Peak of each session <span class="swatch hot-bg"></span>Reached ${HOT_AT}%`;
-  const count = `${sessions.length} session${sessions.length === 1 ? '' : 's'}`;
+  const legend = `<span class="swatch session-bg"></span>${escapeHtml(t('Peak of each session'))} <span class="swatch hot-bg"></span>${escapeHtml(t('Reached {0}%', HOT_AT))}`;
+  const count = sessions.length === 1 ? t('1 session') : t('{0} sessions', sessions.length);
   const highest = Math.round(Math.max(...sessions.map((c) => c.peak)));
   return panel(
     'sessions',
-    'Sessions (5hr)',
-    `Last 7 days · ${count}, ${full} at ${HOT_AT}% or more`,
-    `Bar chart of the peak of each session in the last 7 days: ${count}, ${full} reached ${HOT_AT}% or more, the highest peak was ${highest}%.`,
+    t('Sessions (5hr)'),
+    t('Last 7 days · {0}, {1} at {2}% or more', count, full, HOT_AT),
+    t('Bar chart of the peak of each session in the last 7 days: {0}, {1} reached {2}% or more, the highest peak was {3}%.', count, full, HOT_AT, highest),
     (full ? HATCH : '') + axes(s, start, end) + bars,
     legend,
     layout.height,
@@ -305,10 +308,11 @@ function spendPanel(samples: Sample[], now: number, layout: Layout): string {
   }
   const start = now - RANGE_MS;
   const s = scale(start, now, layout);
-  const lines = runs.map((run) => runShape('spend', run, s) + hoverDots('spend', run, s, 'Monthly Credits')).join('');
+  const lines = runs.map((run) => runShape('spend', run, s) + hoverDots('spend', run, s, t('Monthly Credits'))).join('');
   const latest = runs[runs.length - 1][runs[runs.length - 1].length - 1];
-  const desc = `Line chart of the share of the monthly credits limit used in the last 7 days. Latest reading ${Math.round(latest.percent)}% on ${formatTime(latest.t)}.`;
-  return panel('spend', 'Monthly Credits', 'Last 7 days', desc, axes(s, start, now) + lines, '<span class="swatch spend-bg"></span>Share of the monthly limit', layout.height);
+  const desc = t('Line chart of the share of the monthly credits limit used in the last 7 days. Latest reading {0}% on {1}.', Math.round(latest.percent), formatTime(latest.t));
+  const legend = `<span class="swatch spend-bg"></span>${escapeHtml(t('Share of the monthly limit'))}`;
+  return panel('spend', t('Monthly Credits'), t('Last 7 days'), desc, axes(s, start, now) + lines, legend, layout.height);
 }
 
 export function renderPanels(samples: Sample[], now: number, allowed: SeriesKey[], size: ChartSize = 'medium'): string {
