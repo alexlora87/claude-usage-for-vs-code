@@ -28,6 +28,7 @@
   "Retrying in {0}": "Reintentando en {0}",
   "Your 5-hour session is at {0}%.": "Tu sesión de 5 horas está al {0}%.",
   "Your 7-day window is at {0}%.": "Tu ventana de 7 días está al {0}%.",
+  "Resets in {0}.": "Se reinicia en {0}.",
   "Monthly credits limit reached ({0}).": "Se alcanzó el límite de créditos mensuales ({0}).",
   "Monthly credits at {0}% ({1}).": "Créditos mensuales al {0}% ({1}).",
   "Mute notifications": "Silenciar notificaciones",

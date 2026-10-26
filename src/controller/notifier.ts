@@ -34,7 +34,7 @@ export function crossings(usage: Usage, thresholds: Thresholds, now: number): Cr
     }
   };
   const { session, weekly, spend } = usage;
-  const resets = (date: Date | undefined, longWindow: boolean) => (date ? ` ${t('Resets in')} ${formatRemaining(date.getTime() - now, longWindow)}.` : '');
+  const resets = (date: Date | undefined, longWindow: boolean) => (date ? ` ${t('Resets in {0}.', formatRemaining(date.getTime() - now, longWindow))}` : '');
   if (session) {
     add('session', session.percent, session.resetsAt ? minuteOf(session.resetsAt) : 'unknown',
       `${t('Your 5-hour session is at {0}%.', Math.round(session.percent))}${resets(session.resetsAt, false)}`, false, session.resetsAt);
