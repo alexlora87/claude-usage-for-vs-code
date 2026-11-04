@@ -207,53 +207,80 @@ describe('previous weekly cycles', () => {
   const start = end - 7 * DAY;
   const cycleEnd = (age: number) => end - age * 7 * DAY;
   const current = weekly(start + DAY, 30, end);
-  const cx = (html: string, css: string) => html.match(new RegExp(`class="${css} point" cx="([0-9.]+)"`))![1];
+  const past = (age: number, percent: number) => weekly(cycleEnd(age) - 6 * DAY, percent, cycleEnd(age));
+  const when = (t: number) => new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const options = (html: string) => [...html.matchAll(/<option value="(\d+)"( selected)?>([^<]*)</g)].map((m) => ({ value: Number(m[1]), selected: !!m[2], label: m[3] }));
 
-  it('draws a past reading where the same time of the current cycle falls', () => {
-    const html = renderPanels([weekly(cycleEnd(1) - 7 * DAY + DAY, 50, cycleEnd(1)), current], now, ['weekly']);
-    expect(cx(html, 'past age-1')).toBe(cx(html, 'weekly'));
-    expect(html).toContain('1 previous cycle, peak 50%');
-    expect(html).toContain('<span class="swatch past-bg"></span>Previous cycles');
+  it('draws only the newest cycle, with a dropdown of all of them', () => {
+    const html = renderPanels([past(2, 20), past(1, 50), current], now, ['weekly']);
+    expect(html.match(/class="weekly point"/g)).toHaveLength(1);
+    expect(html).toContain('</h2><select id="weekly-cycle" aria-label="Weekly cycle">');
+    expect(options(html)).toEqual([
+      { value: 0, selected: true, label: 'Current cycle' },
+      { value: cycleEnd(1), selected: false, label: `${day(cycleEnd(2))} – ${day(cycleEnd(1))}` },
+      { value: cycleEnd(2), selected: false, label: `${day(cycleEnd(3))} – ${day(cycleEnd(2))}` },
+    ]);
   });
 
-  it('shows the real date of a past reading in its tooltip', () => {
-    const at = cycleEnd(1) - 7 * DAY + DAY;
-    const html = renderPanels([weekly(at, 50, cycleEnd(1)), weekly(at + 20 * MIN, 52, cycleEnd(1)), current], now, ['weekly']);
-    const when = new Date(at + 20 * MIN).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
-    expect(html).toContain(`Cycle that reset ${new Date(cycleEnd(1)).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })}: 52% · ${when}`);
+  it('draws the chosen cycle alone, on its own dates and without a projection', () => {
+    const samples = [past(1, 50), ...[...Array(22).keys()].map((i) => weekly(now - (21 - i) * 20 * MIN, 20 + i, end))];
+    const html = renderPanels(samples, now, ['weekly'], 'medium', cycleEnd(1));
+    expect(options(html).map((o) => o.selected)).toEqual([false, true]);
+    expect(html).toContain(`<p class="sub">Cycle that reset ${when(cycleEnd(1))} · peak 50%</p>`);
+    expect(options(html)[1].label).not.toContain('Cycle that reset');
+    expect(html).toContain('Latest reading 50%.</desc>');
+    expect(html.match(/class="weekly point"/g)).toHaveLength(1);
+    expect(html).not.toContain('<polyline class="weekly"');
+    expect(html).not.toContain('class="projection');
+    expect(html).not.toContain('projection-bg');
+    expect(html).not.toContain('<line class="now"');
   });
 
-  it('draws at most four, the newest ones, with growing age', () => {
-    const olds = [1, 2, 3, 4, 5].map((age) => weekly(cycleEnd(age) - 7 * DAY + DAY, 10 * age, cycleEnd(age)));
-    const html = renderPanels([...olds, current], now, ['weekly']);
-    expect(html.match(/class="past age-\d point"/g)).toEqual(['class="past age-1 point"', 'class="past age-2 point"', 'class="past age-3 point"', 'class="past age-4 point"']);
-    expect(html).toContain('4 previous cycles, peaks 10%, 20%, 30%, 40%');
+  it('shows the real date of a reading of the chosen cycle in its tooltip', () => {
+    const at = cycleEnd(1) - 6 * DAY;
+    const html = renderPanels([weekly(at, 50, cycleEnd(1)), current], now, ['weekly'], 'medium', cycleEnd(1));
+    expect(html).toContain(`Weekly (7 day): 50% · ${when(at)}`);
   });
 
-  it('does not repeat the current cycle, and draws nothing without earlier ones', () => {
+  it('finds the chosen cycle despite a small jitter in its reset time', () => {
+    const html = renderPanels([past(1, 50), current], now, ['weekly'], 'medium', cycleEnd(1) + 1000);
+    expect(html).toContain('Latest reading 50%.</desc>');
+  });
+
+  it('goes back to the newest cycle when the chosen one is gone', () => {
+    const html = renderPanels([past(1, 50), current], now, ['weekly'], 'medium', cycleEnd(3));
+    expect(html).toContain('<p class="sub">Current cycle, resets');
+    expect(options(html)[0].selected).toBe(true);
+  });
+
+  it('lists every stored cycle', () => {
+    const olds = [1, 2, 3, 4, 5].map((age) => past(age, 10 * age));
+    expect(options(renderPanels([...olds, current], now, ['weekly']))).toHaveLength(6);
+  });
+
+  it('has no dropdown with a single cycle, and does not repeat one for a jitter', () => {
     const html = renderPanels([current, weekly(start + 2 * DAY, 35, end + 1000)], now, ['weekly']);
     expect(html).toContain('Current cycle, resets');
-    expect(html).not.toContain('past');
-    expect(html).not.toContain('previous cycle');
+    expect(html).not.toContain('<select');
   });
 
-  it('drops a past reading outside its own cycle', () => {
+  it('does not list a cycle whose readings are all outside it', () => {
     const html = renderPanels([weekly(cycleEnd(1) + 3 * DAY, 90, cycleEnd(1)), current], now, ['weekly']);
     expect(html).toContain('Current cycle, resets');
-    expect(html).not.toContain('past');
+    expect(html).not.toContain('<select');
   });
 
-  it('skips an earlier cycle without valid readings and still draws four', () => {
-    const olds = [1, 2, 3, 4, 5].map((age) => weekly(cycleEnd(age) - 7 * DAY + DAY, 10 * age, cycleEnd(age)));
-    const html = renderPanels([weekly(cycleEnd(1) + 3 * DAY, 90, cycleEnd(1)), ...olds.slice(1), current], now, ['weekly']);
-    expect(html).toContain('4 previous cycles, peaks 20%, 30%, 40%, 50%');
+  it('leaves a reading outside its cycle out of the peak', () => {
+    const html = renderPanels([past(1, 40), weekly(cycleEnd(1) + 3 * DAY, 90, cycleEnd(1)), current], now, ['weekly'], 'medium', cycleEnd(1));
+    expect(html).toContain('peak 40%</p>');
   });
 
-  it('keeps the previous cycles when the current one has ended', () => {
+  it('names the newest cycle as the last one when it has ended', () => {
     const ended = weekly(now - 3 * DAY - HOUR, 60, now - HOUR);
     const html = renderPanels([weekly(now - 10 * DAY, 20, now - HOUR - 7 * DAY), ended], now, ['weekly']);
-    expect(html).toContain('Last cycle, reset');
-    expect(html).toContain('1 previous cycle, peak 20%');
+    expect(html).toContain('<p class="sub">Last cycle, reset');
+    expect(options(html)[0].label).toBe('Last cycle');
   });
 });
 

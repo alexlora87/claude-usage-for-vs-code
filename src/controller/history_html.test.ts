@@ -49,15 +49,22 @@ describe('renderHistoryHtml', () => {
     expect(renderHistoryHtml([], now, 'abc')).toContain('No history yet');
   });
 
-  it('allows no scripts and styles only with the nonce, also with the charts drawn', () => {
+  it('allows scripts and styles only with the nonce, also with the charts drawn', () => {
     const hot = { t: now - 5 * 60_000, session: { percent: 95, resetsAt: now + 60 * 60_000 }, weekly: { percent: 40, resetsAt: now + 24 * 60 * 60_000 } };
     const html = renderHistoryHtml([hot], now, 'abc');
     expect(html).toContain('hot-hatch');
     expect(html).toContain('class="pace"');
-    expect(html).toContain("default-src 'none'; style-src 'nonce-abc'");
+    expect(html).toContain("default-src 'none'; style-src 'nonce-abc'; script-src 'nonce-abc'");
     expect(html).toContain('<style nonce="abc">');
-    expect(html).not.toContain('<script');
+    expect(html.match(/<script/g)).toEqual(['<script']);
+    expect(html).toContain('<script nonce="abc">');
     expect(html).not.toMatch(/style="/);
+  });
+
+  it('draws the weekly cycle it is asked for', () => {
+    const week = 7 * 24 * HOUR;
+    const samples: Sample[] = [{ t: now - week, weekly: { percent: 70, resetsAt: reset - week } }, { t: now, weekly: { percent: 10, resetsAt: reset } }];
+    expect(renderHistoryHtml(samples, now, 'abc', ['weekly'], 'medium', reset - week)).toContain('Latest reading 70%.</desc>');
   });
 });
 
@@ -76,5 +83,14 @@ describe('renderHistoryHtml in Spanish', () => {
 
   it('says there is no history yet', () => {
     expect(renderHistoryHtml([], now, 'abc')).toContain('Todavía no hay historial');
+  });
+
+  it('writes the weekly dropdown in Spanish', () => {
+    const week = 7 * 24 * HOUR;
+    const samples: Sample[] = [{ t: now - week, weekly: { percent: 70, resetsAt: reset - week } }, { t: now, weekly: { percent: 10, resetsAt: reset } }];
+    const html = renderHistoryHtml(samples, now, 'abc', ['weekly'], 'medium', reset - week);
+    expect(html).toContain('aria-label="Ciclo semanal"');
+    expect(html).toContain('>Ciclo actual</option>');
+    expect(html).toMatch(/Ciclo que se restableció el [^<]+ · pico 70%<\/p>/);
   });
 });
