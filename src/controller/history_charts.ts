@@ -11,8 +11,6 @@ const RANGE_MS = 7 * DAY;
 const GAP_MS = 30 * MINUTE;
 /** Same cycle when the reset times differ by less than this (the API may jitter). */
 const CYCLE_TOLERANCE_MS = 2 * MINUTE;
-/** How many cycles before the current one the weekly panel draws. */
-const PAST_CYCLES = 4;
 /** One hover point per this much time, so a week stays light. */
 const HOVER_EVERY_MS = 30 * MINUTE;
 /** From this percent a session bar is drawn as a full one. */
@@ -52,6 +50,8 @@ export function escapeHtml(text: string): string {
 
 const formatTime = (t: number) =>
   new Date(t).toLocaleString(dateLocale('en-GB'), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+
+const formatDay = (t: number) => new Date(t).toLocaleDateString(dateLocale('en-GB'), { day: 'numeric', month: 'short' });
 
 interface Reading {
   t: number;
@@ -167,13 +167,8 @@ const lonePoint = (css: string, p: Reading, s: Scale) => `<circle class="${css} 
 const runShape = (css: string, run: Reading[], s: Scale) =>
   run.length === 1 ? lonePoint(css, run[0], s) : polyline(css, run.map((p) => [s.x(p.t), s.y(p.percent)]));
 
-/** A reading drawn at `t` that was taken at `at`. */
-interface Shifted extends Reading {
-  at: number;
-}
-
 /** Invisible circles that show a tooltip on hover, one per half hour and always the last of a run. */
-function hoverDots(css: string, run: Array<Reading & { at?: number }>, s: Scale, label: string): string {
+function hoverDots(css: string, run: Reading[], s: Scale, label: string): string {
   let lastHover = -Infinity;
   return run
     .filter((p, i) => {
@@ -181,7 +176,7 @@ function hoverDots(css: string, run: Array<Reading & { at?: number }>, s: Scale,
       lastHover = keep ? p.t : lastHover;
       return keep;
     })
-    .map((p) => `<circle class="${css}-dot" cx="${f(s.x(p.t))}" cy="${f(s.y(p.percent))}" r="4"><title>${escapeHtml(`${label}: ${Math.round(p.percent)}% · ${formatTime(p.at ?? p.t)}`)}</title></circle>`)
+    .map((p) => `<circle class="${css}-dot" cx="${f(s.x(p.t))}" cy="${f(s.y(p.percent))}" r="4"><title>${escapeHtml(`${label}: ${Math.round(p.percent)}% · ${formatTime(p.t)}`)}</title></circle>`)
     .join('');
 }
 
@@ -189,39 +184,58 @@ function hoverDots(css: string, run: Array<Reading & { at?: number }>, s: Scale,
 const HATCH = '<defs><pattern id="hot-hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line class="hatch" x1="3" y1="0" x2="3" y2="6"/></pattern></defs>';
 
 /** The `desc` is what a screen reader says about the chart; a `<title>` here would show over the whole chart. */
-function panel(id: string, title: string, note: string, desc: string, svg: string, legend: string, height: number): string {
-  return `<section><h2 id="${id}-title">${escapeHtml(title)}</h2><p class="sub">${escapeHtml(note)}</p><svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="${id}-title" aria-describedby="${id}-desc"><desc id="${id}-desc">${escapeHtml(desc)}</desc>${svg}</svg><p class="legend">${legend}</p></section>`;
+function panel(id: string, title: string, note: string, desc: string, svg: string, legend: string, height: number, picker = ''): string {
+  return `<section><div class="head"><h2 id="${id}-title">${escapeHtml(title)}</h2>${picker}</div><p class="sub">${escapeHtml(note)}</p><svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-labelledby="${id}-title" aria-describedby="${id}-desc"><desc id="${id}-desc">${escapeHtml(desc)}</desc>${svg}</svg><p class="legend">${legend}</p></section>`;
 }
 
-/** The cycles before `current`, newest first, each with its readings moved to where they fall in the current one. */
-function pastCycles(all: Cycle[], current: Cycle): Array<{ end: number; peak: number; runs: Shifted[][] }> {
-  return all
-    .filter((c) => c.end < current.end - CYCLE_TOLERANCE_MS)
-    .sort((a, b) => b.end - a.end)
+/** The weekly cycles that have readings, newest first. */
+function weeklyCycles(samples: Sample[]): Cycle[] {
+  return cycles(samples, 'weekly')
     .map((c) => {
       // A stale reading may carry a time outside its cycle: it does not belong on the chart.
       const points = c.points.filter((p) => p.t >= c.start && p.t <= c.end);
-      return { end: c.end, peak: Math.max(0, ...points.map((p) => p.percent)), runs: runsOf(points.map((p) => ({ t: current.start + (p.t - c.start), percent: p.percent, at: p.t }))) };
+      return { ...c, points, peak: Math.max(0, ...points.map((p) => p.percent)) };
     })
-    .filter((c) => c.runs.length)
-    .slice(0, PAST_CYCLES);
+    .filter((c) => c.points.length)
+    .sort((a, b) => b.end - a.end);
 }
 
-/** The current weekly cycle against an even pace, with where it is on pace to end. */
-function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
-  const weeks = cycles(samples, 'weekly');
-  const cycle = weeks.reduce<Cycle | undefined>((latest, c) => (!latest || c.end > latest.end ? c : latest), undefined);
-  if (!cycle || cycle.end < now - RANGE_MS) {
+/** What the note under the title says about a cycle. */
+function cycleNote(cycle: Cycle, newest: boolean, now: number): string {
+  if (!newest) {
+    return `${t('Cycle that reset {0}', formatTime(cycle.end))} · ${t('peak {0}%', Math.round(cycle.peak))}`;
+  }
+  return cycle.end <= now ? t('Last cycle, reset {0}', formatTime(cycle.end)) : t('Current cycle, resets {0}', formatTime(cycle.end));
+}
+
+/** The name of a cycle in the dropdown, shorter than its note so the two do not read the same. */
+function cycleOption(cycle: Cycle, newest: boolean, now: number): string {
+  if (!newest) {
+    return `${formatDay(cycle.start)} – ${formatDay(cycle.end)}`;
+  }
+  return cycle.end <= now ? t('Last cycle') : t('Current cycle');
+}
+
+/** The dropdown of the weekly cycles. The newest has the value 0, so the choice follows it when a new cycle starts. */
+function cyclePicker(weeks: Cycle[], shown: Cycle, now: number): string {
+  if (weeks.length < 2) {
     return '';
   }
-  // A stale reading may carry a time after the reset: it is outside the chart.
-  const points = cycle.points.filter((p) => p.t <= cycle.end);
-  if (!points.length) {
+  const options = weeks.map((c, i) => `<option value="${i === 0 ? 0 : c.end}"${c === shown ? ' selected' : ''}>${escapeHtml(cycleOption(c, i === 0, now))}</option>`).join('');
+  return `<select id="weekly-cycle" aria-label="${escapeHtml(t('Weekly cycle'))}">${options}</select>`;
+}
+
+/** One weekly cycle against an even pace: the newest unless `selected` is the reset time of another, with where it is on pace to end. */
+function weeklyPanel(samples: Sample[], now: number, layout: Layout, selected: number): string {
+  const weeks = weeklyCycles(samples);
+  if (!weeks.length || weeks[0].end < now - RANGE_MS) {
     return '';
   }
+  const cycle = weeks.find((c) => Math.abs(c.end - selected) <= CYCLE_TOLERANCE_MS) ?? weeks[0];
+  const newest = cycle === weeks[0];
   const s = scale(cycle.start, cycle.end, layout);
-  const last = points[points.length - 1];
-  const runs = runsOf(points);
+  const last = cycle.points[cycle.points.length - 1];
+  const runs = runsOf(cycle.points);
 
   let drawn = '';
   runs.forEach((run, i) => {
@@ -234,10 +248,9 @@ function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
   });
 
   let projection = '';
-  // Once the cycle is over there is no pace to project: it is the last one that was read.
-  const ended = cycle.end <= now;
-  let note = ended ? t('Last cycle, reset {0}', formatTime(cycle.end)) : t('Current cycle, resets {0}', formatTime(cycle.end));
-  const forecast = !ended ? computeForecasts(samples, { weekly: { percent: last.percent, resetsAt: new Date(cycle.end) } }, last.t).weekly : undefined;
+  let note = cycleNote(cycle, newest, now);
+  // Once the cycle is over there is no pace to project.
+  const forecast = newest && cycle.end > now ? computeForecasts(samples, { weekly: { percent: last.percent, resetsAt: new Date(cycle.end) } }, last.t).weekly : undefined;
   if (forecast && 'endPercent' in forecast) {
     projection = segment('projection', [s.x(last.t), s.y(last.percent)], [s.x(cycle.end), s.y(forecast.endPercent)]);
     note += ` · ${t('on pace to end at ~{0}%', Math.min(99, Math.round(forecast.endPercent)))}`;
@@ -248,19 +261,9 @@ function weeklyPanel(samples: Sample[], now: number, layout: Layout): string {
 
   const nowLine = now > cycle.start && now < cycle.end ? `<line class="now" x1="${f(s.x(now))}" x2="${f(s.x(now))}" y1="${PLOT.top}" y2="${layout.height - PLOT.bottom}"/>` : '';
   const pace = segment('pace', [s.x(cycle.start), s.y(0)], [s.x(cycle.end), s.y(100)]);
-  const past = pastCycles(weeks, cycle);
-  let before = '';
-  past.forEach((c, i) => {
-    const label = t('Cycle that reset {0}', formatTime(c.end));
-    before += c.runs.map((run) => runShape(`past age-${i + 1}`, run, s) + hoverDots('past', run, s, label)).join('');
-  });
-  if (past.length) {
-    const peaks = past.map((c) => `${Math.round(c.peak)}%`).join(', ');
-    note += ` · ${past.length === 1 ? t('1 previous cycle, peak {0}', peaks) : t('{0} previous cycles, peaks {1}', past.length, peaks)}`;
-  }
-  const legend = `<span class="swatch weekly-bg"></span>${escapeHtml(t('Usage'))} <span class="swatch pace-bg"></span>${escapeHtml(t('Even pace'))} <span class="swatch projection-bg"></span>${escapeHtml(t('Projection'))}${past.length ? ` <span class="swatch past-bg"></span>${escapeHtml(t('Previous cycles'))}` : ''}`;
+  const legend = `<span class="swatch weekly-bg"></span>${escapeHtml(t('Usage'))} <span class="swatch pace-bg"></span>${escapeHtml(t('Even pace'))}${projection ? ` <span class="swatch projection-bg"></span>${escapeHtml(t('Projection'))}` : ''}`;
   const desc = t('Line chart of the weekly cycle against an even pace. {0}. Latest reading {1}%.', note, Math.round(last.percent));
-  return panel('weekly', t('Weekly (7 day)'), note, desc, axes(s, cycle.start, cycle.end) + before + pace + nowLine + drawn + projection, legend, layout.height);
+  return panel('weekly', t('Weekly (7 day)'), note, desc, axes(s, cycle.start, cycle.end) + pace + nowLine + drawn + projection, legend, layout.height, cyclePicker(weeks, cycle, now));
 }
 
 /** One bar per session of the last 7 days: the most it reached. */
@@ -315,11 +318,11 @@ function spendPanel(samples: Sample[], now: number, layout: Layout): string {
   return panel('spend', t('Monthly Credits'), t('Last 7 days'), desc, axes(s, start, now) + lines, legend, layout.height);
 }
 
-export function renderPanels(samples: Sample[], now: number, allowed: SeriesKey[], size: ChartSize = 'medium'): string {
+export function renderPanels(samples: Sample[], now: number, allowed: SeriesKey[], size: ChartSize = 'medium', weeklyCycle = 0): string {
   const layout = LAYOUTS[size];
   return [
     allowed.includes('session') ? sessionPanel(samples, now, layout) : '',
-    allowed.includes('weekly') ? weeklyPanel(samples, now, layout) : '',
+    allowed.includes('weekly') ? weeklyPanel(samples, now, layout, weeklyCycle) : '',
     allowed.includes('spend') ? spendPanel(samples, now, layout) : '',
   ].join('');
 }

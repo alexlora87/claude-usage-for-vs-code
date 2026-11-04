@@ -5,8 +5,8 @@ import { ChartSize, escapeHtml, renderPanels, SeriesKey } from './history_charts
 
 export type { SeriesKey } from './history_charts';
 
-export function renderHistoryHtml(samples: Sample[], now: number, nonce: string, allowed: SeriesKey[] = ['session', 'weekly', 'spend'], size: ChartSize = 'medium'): string {
-  const panels = renderPanels(samples, now, allowed, size);
+export function renderHistoryHtml(samples: Sample[], now: number, nonce: string, allowed: SeriesKey[] = ['session', 'weekly', 'spend'], size: ChartSize = 'medium', weeklyCycle = 0): string {
+  const panels = renderPanels(samples, now, allowed, size, weeklyCycle);
   const body = panels || `<p>${escapeHtml(t('No history yet. It fills up as the extension reads your usage.'))}</p>`;
   const title = escapeHtml(t('Claude Usage History'));
 
@@ -14,15 +14,18 @@ export function renderHistoryHtml(samples: Sample[], now: number, nonce: string,
 <html lang="${language()}">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${title}</title>
 <style nonce="${nonce}">
 body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 16px; }
 h1 { font-size: 1.3em; font-weight: 600; margin: 0 0 4px; }
-h2 { font-size: 1.05em; font-weight: 600; margin: 24px 0 2px; }
+h2 { font-size: 1.05em; font-weight: 600; margin: 0; }
+.head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; max-width: 900px; margin: 24px 0 2px; }
 .sub { color: var(--vscode-descriptionForeground); margin: 0 0 8px; }
 svg { width: 100%; max-width: 900px; height: auto; }
+select { max-width: 100%; padding: 2px 4px; font: inherit; color: var(--vscode-dropdown-foreground); background: var(--vscode-dropdown-background); border: 1px solid var(--vscode-dropdown-border); border-radius: 2px; }
+select:focus { outline: 1px solid var(--vscode-focusBorder); }
 .grid { stroke: var(--vscode-editorWidget-border, #8884); stroke-width: 1; opacity: 0.6; }
 .grid.major { opacity: 1; }
 .axis { fill: var(--vscode-descriptionForeground); font-size: 11px; }
@@ -34,12 +37,6 @@ circle:hover { fill: currentColor; }
 .weekly-dot { color: var(--vscode-charts-orange); }
 .point { fill: currentColor; }
 .spend-dot { color: var(--vscode-charts-green); }
-.past { stroke: var(--vscode-descriptionForeground); stroke-width: 1.25; color: var(--vscode-descriptionForeground); }
-.past.age-1 { opacity: 0.8; }
-.past.age-2 { opacity: 0.6; }
-.past.age-3 { opacity: 0.45; }
-.past.age-4 { opacity: 0.3; }
-.past-dot { color: var(--vscode-descriptionForeground); }
 .connector { stroke: var(--vscode-charts-orange); stroke-dasharray: 2 4; opacity: 0.7; }
 .pace { stroke: var(--vscode-descriptionForeground); stroke-dasharray: 2 5; stroke-width: 1.5; }
 .projection { stroke: var(--vscode-charts-orange); stroke-dasharray: 6 4; }
@@ -57,7 +54,6 @@ circle:hover { fill: currentColor; }
 .weekly-bg { background: var(--vscode-charts-orange); }
 .spend-bg { background: var(--vscode-charts-green); }
 .hot-bg { background: repeating-linear-gradient(45deg, var(--vscode-charts-red) 0 2px, var(--vscode-editor-background) 2px 4px); }
-.past-bg { background: var(--vscode-descriptionForeground); opacity: 0.6; }
 .pace-bg { background: var(--vscode-descriptionForeground); }
 .projection-bg { background: var(--vscode-charts-orange); opacity: 0.6; }
 </style>
@@ -66,6 +62,21 @@ circle:hover { fill: currentColor; }
 <h1>${title}</h1>
 <p class="sub">${escapeHtml(t('Stored only on this computer.'))}</p>
 ${body}
+<script nonce="${nonce}">
+const vscode = acquireVsCodeApi();
+const picker = document.getElementById('weekly-cycle');
+if (picker) {
+  // The page is rebuilt after a choice: this keeps the keyboard, and the scroll, on the dropdown.
+  if (vscode.getState()) {
+    vscode.setState(undefined);
+    picker.focus();
+  }
+  picker.addEventListener('change', () => {
+    vscode.setState(true);
+    vscode.postMessage({ cycle: Number(picker.value) });
+  });
+}
+</script>
 </body>
 </html>`;
 }
