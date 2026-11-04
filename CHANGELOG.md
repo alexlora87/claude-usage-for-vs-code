@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0
+
+### Changed
+
+- The weekly chart of **Show History** no longer draws the earlier cycles on top of the current one: a dropdown picks which cycle to see, one at a time.
+
 ## 1.6.0
 
 ### Added
